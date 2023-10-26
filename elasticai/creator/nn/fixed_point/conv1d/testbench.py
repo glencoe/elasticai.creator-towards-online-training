@@ -21,6 +21,18 @@ class Conv1dTestbench(Testbench):
     def name(self) -> str:
         return self._name
 
+    def prepare_inputs(self, *inputs) -> list[dict]:
+        batches = inputs[0]
+        prepared_inputs = []
+        for batch in batches:
+            prepared_inputs.append({})
+            for channel_id, channel in enumerate(batch):
+                for time_step_id, time_step_val in enumerate(channel):
+                    prepared_inputs[-1][f"x_{channel_id}_{time_step_id}"] = \
+                        self._converter.rational_to_bits(time_step_val)
+
+        return prepared_inputs
+
     def set_inputs(self, *inputs) -> None:
         pass
 

@@ -24,12 +24,13 @@ class SimulatedLayer:
         self._simulator_constructor = simulator_constructor
         self._working_dir = working_dir
 
-    def __call__(self, **inputs) -> Any:
+    def __call__(self, *inputs) -> Any:
         runner = self._simulator_constructor(
             workdir=f"{self._working_dir}", top_design_name=self._testbench.name
         )
+        inputs = self._testbench.prepare_inputs(inputs)
         with open(f"{self._working_dir}/{self._testbench.name}_inputs.csv", "w") as f:
-            writer = csv.DictWriter(f, fieldnames=inputs.keys())
+            writer = csv.DictWriter(f, fieldnames=inputs[0].keys())
             writer.writerows(inputs)
         runner.initialize()
         runner.run()
@@ -38,8 +39,8 @@ class SimulatedLayer:
 
 
 @pytest.mark.simulation
-@pytest.mark.parametrize("x", ([[1., 1., 1.]],
-                               [[0., 1., 1.]]))
+@pytest.mark.parametrize("x", ([[[1., 1., 1.]]],
+                               [[[0., 1., 1.]]]))
 def test_verify_hw_sw_equivalence(x):
     input_data = torch.Tensor(x)
     sw_conv = Conv1d(total_bits=3,

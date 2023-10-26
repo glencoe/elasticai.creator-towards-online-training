@@ -1,4 +1,5 @@
 import pytest
+import torch
 
 from .testbench import Conv1dTestbench
 from ..number_converter import FXPParams
@@ -22,3 +23,10 @@ def construct_parameters():
 def test_parse_reported_content(fxp_params, reported, y):
     bench = Conv1dTestbench("conv1d_testbench", fxp_params)
     assert [y] == bench.parse_reported_content([reported])
+
+
+def test_input_preparation():
+    bench = Conv1dTestbench("bench_name", FXPParams(total_bits=3, frac_bits=0))
+    input = torch.Tensor([[[1.0, 1.0]]])
+    expected = [{"x_0_0": "001", "x_0_1": "001"}]
+    assert expected == bench.prepare_inputs(input.tolist())
