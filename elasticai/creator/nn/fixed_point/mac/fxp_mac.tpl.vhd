@@ -37,7 +37,6 @@ architecture rtl of fxp_Mac_RoundToZero is
             result := result + 1;
         end if;
 
-        -- check if overflow occured
         if x < 0 and result >= 0 then
             result := min(left_bit downto right_bit);
         elsif x >= 0 and result < 0 then
