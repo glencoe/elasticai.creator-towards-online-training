@@ -9,6 +9,7 @@
 '''
 from typing import Any
 
+import pytest
 import torch
 
 from creator.file_generation.on_disk_path import OnDiskPath
@@ -32,9 +33,11 @@ class SimulatedLayer:
         return actual
 
 
-def test_verify_hw_sw_equivalence():
-    input_data = torch.Tensor([[1., 1., 1.]])
-    sw_conv = Conv1d(total_bits=2,
+@pytest.mark.parametrize("x", ([[1., 1., 1.]],
+                               [[0., 1., 1.]]))
+def test_verify_hw_sw_equivalence(x):
+    input_data = torch.Tensor(x)
+    sw_conv = Conv1d(total_bits=3,
                      frac_bits=0,
                      in_channels=1,
                      out_channels=1,
@@ -50,5 +53,5 @@ def test_verify_hw_sw_equivalence():
     testbench.save_to(build_dir.create_subpath("testbenches"))
     sim_layer = SimulatedLayer(testbench, GHDLSimulator, working_dir="build")
     sim_output = sim_layer(input_data)
-    assert sw_output.items() == sim_output
+    assert sw_output.tolist() == sim_output
 

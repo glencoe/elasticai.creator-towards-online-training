@@ -2,6 +2,7 @@ from typing import Any, cast
 
 import torch
 
+from ..testbench import Conv1dTestbench
 from elasticai.creator.base_modules.conv1d import Conv1d as Conv1dBase
 from elasticai.creator.nn.fixed_point._math_operations import MathOperations
 from elasticai.creator.nn.fixed_point._two_complement_fixed_point_config import (
@@ -48,7 +49,8 @@ class Conv1d(DesignCreator, Conv1dBase):
         outputs = super().forward(x)
         return outputs.view(*output_shape)
 
-    def create_testbench(self, ):
+    def create_testbench(self, name: str) -> Conv1dTestbench:
+        return Conv1dTestbench()
 
     def create_design(self, name: str) -> Conv1dDesign:
         def float_to_signed_int(value: float | list) -> int | list:

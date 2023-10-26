@@ -60,11 +60,15 @@ class Conv1d(Design):
             package=module_to_package(self.__module__),
             file_name="conv1d.tpl.vhd",
             parameters=dict(
-                total_bits=str(self._total_bits),
-                frac_bits=str(self._frac_bits),
+                total_width=str(self._total_bits),
+                frac_width=str(self._frac_bits),
                 in_channels=str(self._in_channels),
                 out_channels=str(self._out_channels),
                 kernel_size=str(self._kernel_size),
+                x_address_width="2",
+                y_address_width="1",
+                vector_width="3",
+                name=self.name,
             ),
         )
         destination.create_subpath(self.name).as_file(".vhd").write(template)
