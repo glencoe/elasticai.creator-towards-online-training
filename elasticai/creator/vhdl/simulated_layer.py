@@ -7,6 +7,7 @@ from elasticai.creator.vhdl.ghdl_simulation import GHDLSimulator
 
 
 class Design(Protocol):
+    @abstractmethod
     def save_to(self, destination: Path): ...
 
 
