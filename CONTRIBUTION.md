@@ -1,4 +1,21 @@
 # Contribution Guide
+
+## Setup
+For simulation based testing you need to install [ghdl](https://github.com/ghdl/ghdl).
+For Linux systems follow the [getting ghdl guide](https://github.com/ghdl/ghdl#getting-ghdl).
+Mac users with M1 platforms follow these steps:
+
+1. install ghdl with homebrew `brew install ghdl`
+2. remove the `bin`, `include` and `lib` folders from `/opt/homebrew/Caskroom/ghdl/3.0.0/`
+3. download the ghdl binaries from git using `wget https://github.com/ghdl/ghdl/releases/download/v3.0.0/ghdl-macos-11-mcode.tgz`
+4. unzip it: `tar -xzvf ghdl-macos-11-mcode.tgz`
+5. copy its content to the homebrew folder: `cp -r ghdl-macos-11-mcode/* /opt/homebrew/Caskroom/ghdl/3.0.0/`
+6. run ghdl for the first time
+   - on permission error, you might have to open the *privacy & security* settings and allow ghdl
+
+Mac users with x86_64 you should be good just using the vanilla homebrew version.
+Mac users with M2 should try the approach for M1, but we don't know whether it will work.
+
 ## Concepts
 The `elasticai.creator` aims to support
     1. the design and training of hardware optimization aware neural networks
