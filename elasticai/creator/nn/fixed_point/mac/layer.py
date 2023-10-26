@@ -30,8 +30,8 @@ class MacLayer:
     def create_testbench(self, name: str) -> MacTestBench:
         return MacTestBench(
             fxp_params=self._fxp_params,
-            uut=self.create_design("mac_wrapper_test"),
-            uut_name="mac_wrapper_test",
+            uut=self.create_design("mac_adapter_testbench"),
+            uut_name="mac_adapter_testbench",
             name=name,
         )
 

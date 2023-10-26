@@ -48,6 +48,8 @@ class Conv1d(DesignCreator, Conv1dBase):
         outputs = super().forward(x)
         return outputs.view(*output_shape)
 
+    def create_testbench(self, ):
+
     def create_design(self, name: str) -> Conv1dDesign:
         def float_to_signed_int(value: float | list) -> int | list:
             if isinstance(value, list):
