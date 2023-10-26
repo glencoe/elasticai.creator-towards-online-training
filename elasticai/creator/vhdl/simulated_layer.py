@@ -18,6 +18,10 @@ class Layer(Design, Protocol):
 
 
 class Testbench(Design, Protocol):
+    @property
+    @abstractmethod
+    def name(self) -> str: ...
+
     @abstractmethod
     def set_inputs(self, *inputs) -> None: ...
 
