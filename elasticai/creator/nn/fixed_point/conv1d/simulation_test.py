@@ -33,6 +33,7 @@ class SimulatedLayer:
         return actual
 
 
+@pytest.mark.simulation
 @pytest.mark.parametrize("x", ([[1., 1., 1.]],
                                [[0., 1., 1.]]))
 def test_verify_hw_sw_equivalence(x):

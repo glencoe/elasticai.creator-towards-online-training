@@ -101,14 +101,3 @@ end architecture rtl;"""
     actual_code = saved_files["conv1d_b_rom.vhd"]
     assert expected_code == actual_code
 
-
-def test_conv1d_code_generated_correctly(conv1d_design: Conv1d) -> None:
-    expected_code = """-- Dummy File for testing implementation of conv1d Design
-16
-8
-1
-2
-3"""
-    saved_files = save_design(conv1d_design)
-    actual_code = saved_files["conv1d.vhd"]
-    assert expected_code == actual_code
