@@ -11,7 +11,7 @@ class MacDesign(Savable):
     def save_to(self, destination: Path) -> None:
         wrapper = InProjectTemplate(
             package="elasticai.creator.nn.fixed_point.mac",
-            file_name="mac_adapter.vhd",
+            file_name="mac_adapter.tpl.vhd",
             parameters={
                 "total_width": str(self._fxp_params.total_bits),
                 "frac_width": str(self._fxp_params.frac_bits),
