@@ -21,20 +21,6 @@ def conv1d() -> Conv1d:
     )
 
 
-def conv_with_one_weights(signal_length: int) -> Conv1d:
-    conv = Conv1d(
-        total_bits=16,
-        frac_bits=8,
-        in_channels=1,
-        out_channels=1,
-        bias=False,
-        signal_length=signal_length,
-        kernel_size=2,
-    )
-    conv.weight.data = torch.ones_like(conv.weight)
-    return conv
-
-
 @pytest.fixture
 def conv_with_limited_precision() -> Conv1d:
     return Conv1d(
@@ -90,7 +76,17 @@ def test_ones_weight_kernel_convolution(
     signal_length: int, inputs: list[float], expected: list[float]
 ) -> None:
     input_tensor = torch.tensor(inputs)
-    prediction = conv_with_one_weights(signal_length)(input_tensor)
+    conv = Conv1d(
+        total_bits=16,
+        frac_bits=8,
+        in_channels=1,
+        out_channels=1,
+        bias=False,
+        signal_length=signal_length,
+        kernel_size=2,
+    )
+    conv.weight.data = torch.ones_like(conv.weight)
+    prediction = conv(input_tensor)
     assert expected == prediction.tolist()
 
 
@@ -124,7 +120,7 @@ def test_fxp_operations_additive_over_and_underflow(
     assert expected == prediction.tolist()
 
 
-def test_bias_addition() -> None:
+def test_ensure_bias_is_0_5() -> None:
     conv = Conv1d(
         total_bits=4,
         frac_bits=1,
