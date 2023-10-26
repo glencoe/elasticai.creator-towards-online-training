@@ -7,15 +7,32 @@
 6. let simulation tool run the simulation
 7. parse/deserialize simulation output to required data
 '''
+from typing import Any
+
 import torch
 
 from creator.file_generation.on_disk_path import OnDiskPath
 from creator.nn.fixed_point import Conv1d
 from creator.vhdl.ghdl_simulation import GHDLSimulator
-from creator.vhdl.simulated_layer import SimulatedLayer
 
 
-def test_verify_hw_sw_equivalence(tmp_path):
+class SimulatedLayer:
+    def __init__(self, testbench, simulator_constructor, working_dir):
+        self._testbench = testbench
+        self._simulator_constructor = simulator_constructor
+        self._working_dir = working_dir
+
+    def __call__(self, *inputs) -> Any:
+        runner = self._simulator_constructor(
+            workdir=f"{self._working_dir}", top_design_name=self._testbench.name
+        )
+        runner.initialize()
+        runner.run()
+        actual = self._testbench.parse_reported_content(runner.getReportedContent())
+        return actual
+
+
+def test_verify_hw_sw_equivalence():
     input_data = torch.Tensor([[1., 1., 1.]])
     sw_conv = Conv1d(total_bits=2,
                      frac_bits=0,
@@ -27,11 +44,11 @@ def test_verify_hw_sw_equivalence(tmp_path):
     sw_conv.weight.data = torch.ones_like(sw_conv.weight)
     sw_output = sw_conv(input_data)
     design = sw_conv.create_design("conv1d")
-    testbench = sw_conv.create_testbench("conv1d_testbench", design)
+    testbench = sw_conv.create_testbench("conv1d_testbench")
     build_dir = OnDiskPath("build")
     design.save_to(build_dir.create_subpath("srcs"))
     testbench.save_to(build_dir.create_subpath("testbenches"))
     sim_layer = SimulatedLayer(testbench, GHDLSimulator, working_dir="build")
     sim_output = sim_layer(input_data)
-    assert sw_output == sim_output
+    assert sw_output.items() == sim_output
 

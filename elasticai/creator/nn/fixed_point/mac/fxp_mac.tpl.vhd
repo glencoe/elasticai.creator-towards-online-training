@@ -5,22 +5,22 @@ use ieee.numeric_std.all;
 entity fxp_MAC_RoundToZero is
     generic (
         VECTOR_WIDTH : integer;
-        TOTAL_WIDTH   : integer;
-        FRAC_WIDTH   : integer
+        TOTAL_WIDTH : integer;
+        FRAC_WIDTH : integer
     );
     port (
         reset : in std_logic;
-        next_sample  : in std_logic;
-        x1   : in signed(TOTAL_WIDTH-1 downto 0);
+        next_sample : in std_logic;
+        x1 : in signed(TOTAL_WIDTH-1 downto 0);
         x2 : in signed(TOTAL_WIDTH-1 downto 0);
         sum : out signed(TOTAL_WIDTH-1 downto 0) := (others => '0');
-        done   : out std_logic := '0'
+        done : out std_logic := '0'
     );
 end;
 
 architecture rtl of fxp_Mac_RoundToZero is
 
-    function cut_down(x: in signed(2*TOTAL_WIDTH-1 downto 0)) return signed is
+    function cut_down(x : in signed(2*TOTAL_WIDTH-1 downto 0)) return signed is
         variable result : signed(TOTAL_WIDTH-1 downto 0) := (others=>'0');
         constant left_bit : natural := TOTAL_WIDTH-1+FRAC_WIDTH;
         constant right_bit : natural := FRAC_WIDTH;
