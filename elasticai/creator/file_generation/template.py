@@ -2,7 +2,7 @@ from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from itertools import repeat
 from string import Template as StringTemplate
-from typing import Protocol, cast
+from typing import Protocol, cast, runtime_checkable
 
 from .resource_utils import read_text
 
@@ -11,7 +11,14 @@ def module_to_package(module: str) -> str:
     return ".".join(module.split(".")[:-1])
 
 
+@runtime_checkable
 class Template(Protocol):
+    parameters: dict[str, str | list[str]]
+    content: list[str]
+
+
+@dataclass
+class SimpleTemplate:
     parameters: dict[str, str | list[str]]
     content: list[str]
 
