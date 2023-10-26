@@ -7,6 +7,7 @@
 6. let simulation tool run the simulation
 7. parse/deserialize simulation output to required data
 '''
+import csv
 from typing import Any
 
 import pytest
@@ -23,10 +24,13 @@ class SimulatedLayer:
         self._simulator_constructor = simulator_constructor
         self._working_dir = working_dir
 
-    def __call__(self, *inputs) -> Any:
+    def __call__(self, **inputs) -> Any:
         runner = self._simulator_constructor(
             workdir=f"{self._working_dir}", top_design_name=self._testbench.name
         )
+        with open(f"{self._working_dir}/{self._testbench.name}_inputs.csv", "w") as f:
+            writer = csv.DictWriter(f, fieldnames=inputs.keys())
+            writer.writerows(inputs)
         runner.initialize()
         runner.run()
         actual = self._testbench.parse_reported_content(runner.getReportedContent())
