@@ -11,6 +11,9 @@ class GHDLSimulator:
 
     This runner uses the GHDL tool.
     The parsed content has the following keys: `("source", "line", "column", "time", "type", "content")'
+
+    Args:
+        workdir: typically the path to your build root, this is where we will look for vhd files
     """
 
     def __init__(self, workdir, top_design_name):
