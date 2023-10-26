@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from typing import Any, Protocol
 
 from elasticai.creator.file_generation.on_disk_path import OnDiskPath
@@ -13,12 +14,14 @@ class Layer(Design, Protocol):
     @property
     def name(self) -> str: ...
 
-    def create_testbench(self, name: str) -> "TestBench": ...
+    def create_testbench(self, name: str) -> "Testbench": ...
 
 
-class TestBench(Design, Protocol):
+class Testbench(Design, Protocol):
+    @abstractmethod
     def set_inputs(self, *inputs) -> None: ...
 
+    @abstractmethod
     def parse_reported_content(self, content: Any) -> Any: ...
 
 
