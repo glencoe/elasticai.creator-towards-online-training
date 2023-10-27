@@ -14,9 +14,9 @@ from typing import Any
 import pytest
 import torch
 
-from creator.file_generation.on_disk_path import OnDiskPath
-from creator.nn.fixed_point import Conv1d
-from creator.vhdl.ghdl_simulation import GHDLSimulator
+from elasticai.creator.file_generation.on_disk_path import OnDiskPath
+from .layer import Conv1d
+from elasticai.creator.vhdl.ghdl_simulation import GHDLSimulator
 
 
 class SimulatedLayer:
