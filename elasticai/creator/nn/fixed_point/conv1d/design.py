@@ -37,18 +37,18 @@ class Conv1d(Design):
         self._frac_bits = frac_bits
         self._in_channels = in_channels
         self._out_channels = out_channels
-        self._input_signal_length = signal_length
-        self._kernel_size = kernel_size
+        self.input_signal_length = signal_length
+        self.kernel_size = kernel_size
         self._weights = weights
         self._bias = bias
-        self._output_signal_length = math.floor(
-            self._input_signal_length - self._kernel_size + 1
+        self.output_signal_length = math.floor(
+            self.input_signal_length - self.kernel_size + 1
         )
         self._port = create_port(
             x_width=self._total_bits,
             y_width=self._total_bits,
-            x_count=self._input_signal_length * self._in_channels,
-            y_count=self._output_signal_length * self._out_channels,
+            x_count=self.input_signal_length * self._in_channels,
+            y_count=self.output_signal_length * self._out_channels,
         )
 
     @property
@@ -72,8 +72,8 @@ class Conv1d(Design):
                 frac_width=str(self._frac_bits),
                 in_channels=str(self._in_channels),
                 out_channels=str(self._out_channels),
-                kernel_size=str(self._kernel_size),
-                vector_width=str(self._input_signal_length),
+                kernel_size=str(self.kernel_size),
+                vector_width=str(self.input_signal_length),
                 name=self.name,
             ) | generate_parameters_from_port(self._port),
         )

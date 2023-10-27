@@ -23,6 +23,10 @@ class GHDLSimulator:
         self._standard = "08"
         self._result = {}
         self._test_bench_name = top_design_name
+        self._generics = {}
+
+    def add_generic(self, **kwargs):
+        self._generics.update(kwargs)
 
     def initialize(self):
         """Call this function once before calling `run()` and on every file change."""
@@ -33,8 +37,9 @@ class GHDLSimulator:
     def run(self):
         """Runs the simulation and saves whatever the tool wrote to stdout.
         You're supposed to call `initialize` once, before calling `run`."""
+        generic_options = [f"-g{key}={value}" for key, value in self._generics.items()]
         self._result = self._execute_command_and_return_stdout(
-            self._assemble_command("-r") + [self._test_bench_name]
+            self._assemble_command(["-r"]) + [self._test_bench_name] + generic_options
         )
 
     def getReportedContent(self) -> list[str]:
@@ -70,8 +75,12 @@ class GHDLSimulator:
             command, cwd=self._root, capture_output=True
         ).stdout.decode()
 
-    def _assemble_command(self, command_flag):
-        return ["ghdl", command_flag, f"--std={self._standard}", self._workdir_flag]
+    def _assemble_command(self, command_flags):
+        if isinstance(command_flags, str):
+            command_flags = [command_flags]
+        return (
+            ["ghdl"] + command_flags + [f"--std={self._standard}", self._workdir_flag]
+        )
 
     @property
     def _workdir_flag(self):

@@ -6,6 +6,9 @@ use ieee.std_logic_textio.all;
 use std.env.finish;
 
 entity ${testbench_name} is
+  generic (
+      INPUTS_FILE_PATH: string
+  );
 end;
 
 architecture rtl of ${testbench_name} is
@@ -44,8 +47,10 @@ begin
         variable v_in : signed(${total_bits}-1 downto 0);
         variable v_SPACE     : character;
     begin
+        report "reading file " & INPUTS_FILE_PATH;
+
         if read_done = '0' then
-            file_open(input_file, "${input_file_name}",  read_mode);
+            file_open(input_file, INPUTS_FILE_PATH,  read_mode);
             readline(input_file, v_ILINE);
             while not endfile(input_file) loop
                 readline(input_file, v_ILINE); -- read header
@@ -67,7 +72,7 @@ begin
     begin
         if read_done = '1' then
 
-            report to_bstring(test_return_signal);
+            report "result: " & to_bstring(test_return_signal);
             finish;
         end if;
     end process;
