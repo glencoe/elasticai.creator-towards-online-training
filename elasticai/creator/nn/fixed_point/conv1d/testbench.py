@@ -4,12 +4,11 @@ from elasticai.creator.file_generation.template import (
     module_to_package,
 )
 from ..number_converter import NumberConverter, FXPParams
-from elasticai.creator.vhdl.simulated_layer import Testbench
 from .design import Conv1d as Conv1dDesign
 import math
 
 
-class Conv1dTestbench(Testbench):
+class Conv1dTestbench:
     def __init__(self, name: str, uut: Conv1dDesign, fxp_params: FXPParams):
         self._converter = NumberConverter(fxp_params)
         self._name = name
@@ -21,8 +20,6 @@ class Conv1dTestbench(Testbench):
         self._output_signal_length = math.floor(
             self._input_signal_length - self._kernel_size + 1
         )
-
-        Testbench.__init__(self)
 
     def save_to(self, destination: Path):
         template = InProjectTemplate(
@@ -57,9 +54,6 @@ class Conv1dTestbench(Testbench):
                     )
 
         return prepared_inputs
-
-    def set_inputs(self, *inputs) -> None:
-        pass
 
     def parse_reported_content(self, content: list[str]) -> list[list[float]]:
         result = None
