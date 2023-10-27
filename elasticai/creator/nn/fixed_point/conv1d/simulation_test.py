@@ -29,13 +29,16 @@ class SimulatedLayer:
             workdir=f"{self._working_dir}", top_design_name=self._testbench.name
         )
         inputs = self._testbench.prepare_inputs(inputs)
-        with open(f"{self._working_dir}/{self._testbench.name}_inputs.csv", "w") as f:
-            writer = csv.DictWriter(f, fieldnames=inputs[0].keys())
-            writer.writerows(inputs)
+        self._write_csv(inputs)
         runner.initialize()
         runner.run()
         actual = self._testbench.parse_reported_content(runner.getReportedContent())
         return actual
+
+    def _write_csv(self, inputs):
+        with open(f"{self._working_dir}/{self._testbench.name}_inputs.csv", "w") as f:
+            writer = csv.DictWriter(f, fieldnames=inputs[0].keys())
+            writer.writerows(inputs)
 
 
 @pytest.mark.simulation
