@@ -2,18 +2,38 @@ from creator.file_generation.savable import Path
 from creator.file_generation.template import InProjectTemplate, module_to_package
 from creator.nn.fixed_point.number_converter import NumberConverter, FXPParams
 from elasticai.creator.vhdl.simulated_layer import Testbench
+from .design import Conv1d as Conv1dDesign
+import math
 
 
 class Conv1dTestbench(Testbench):
-    def __init__(self, name: str, fxp_params: FXPParams):
+    def __init__(self, name: str, uut: Conv1dDesign, fxp_params: FXPParams):
         self._converter = NumberConverter(fxp_params)
         self._name = name
+        self._uut_name = uut.name
+        self._input_signal_length = uut._input_signal_length
+        self._fxp_params = fxp_params
+        self._converter = NumberConverter(self._fxp_params)
+        self._kernel_size = uut._kernel_size
+        self._input_file_name = 'inputs.csv'
+        self._output_signal_length = math.floor(
+            self._input_signal_length - self._kernel_size + 1
+        )
+
+        Testbench.__init__(self)
 
     def save_to(self, destination: Path):
         template = InProjectTemplate(
             package=module_to_package(self.__module__),
             file_name="testbench.tpl.vhd",
-            parameters={"name": self.name}
+            parameters={"testbench_name": self.name,
+                        "signal_length": str(self._input_signal_length),
+                        "total_bits": str(self._fxp_params.total_bits),
+                        "input_file_name": self._input_file_name,
+                        "x_address_width": str(math.ceil(math.log2(self._input_signal_length))),
+                        "y_address_width": str(math.ceil(math.log2(self._output_signal_length))),
+                        "uut_name": self._uut_name
+                        }
         )
         destination.as_file(".vhd").write(template)
 

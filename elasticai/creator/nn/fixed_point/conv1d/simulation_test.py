@@ -24,7 +24,7 @@ class SimulatedLayer:
         self._simulator_constructor = simulator_constructor
         self._working_dir = working_dir
 
-    def __call__(self, *inputs) -> Any:
+    def __call__(self, *inputs: Any) -> Any:
         runner = self._simulator_constructor(
             workdir=f"{self._working_dir}", top_design_name=self._testbench.name
         )
@@ -42,12 +42,12 @@ class SimulatedLayer:
 
 
 @pytest.mark.simulation
-@pytest.mark.parametrize("x", ([[[1., 1., 1.]]],
-                               [[[0., 1., 1.]]]))
-def test_verify_hw_sw_equivalence(x):
+@pytest.mark.parametrize("x", ([[1., 1., 1.]],
+                               [[0., 1., 1.]]))
+def test_verify_hw_sw_equivalence_3_inputs(x):
     input_data = torch.Tensor(x)
-    sw_conv = Conv1d(total_bits=3,
-                     frac_bits=0,
+    sw_conv = Conv1d(total_bits=4,
+                     frac_bits=1,
                      in_channels=1,
                      out_channels=1,
                      signal_length=3,
@@ -56,7 +56,7 @@ def test_verify_hw_sw_equivalence(x):
     sw_conv.weight.data = torch.ones_like(sw_conv.weight)
     sw_output = sw_conv(input_data)
     design = sw_conv.create_design("conv1d")
-    testbench = sw_conv.create_testbench("conv1d_testbench")
+    testbench = sw_conv.create_testbench("conv1d_testbench", design)
     build_dir = OnDiskPath("build")
     design.save_to(build_dir.create_subpath("srcs"))
     testbench.save_to(build_dir.create_subpath("testbenches"))
@@ -64,3 +64,25 @@ def test_verify_hw_sw_equivalence(x):
     sim_output = sim_layer(input_data)
     assert sw_output.tolist() == sim_output
 
+
+@pytest.mark.parametrize("x", ([[1., 1., 1., 1.]],
+                               [[0., 1., 1., 0.]]))
+def test_verify_hw_sw_equivalence_4_inputs(x):
+    input_data = torch.Tensor(x)
+    sw_conv = Conv1d(total_bits=4,
+                     frac_bits=1,
+                     in_channels=1,
+                     out_channels=1,
+                     signal_length=4,
+                     kernel_size=2,
+                     bias=False)
+    sw_conv.weight.data = torch.ones_like(sw_conv.weight)
+    sw_output = sw_conv(input_data)
+    design = sw_conv.create_design("conv1d")
+    testbench = sw_conv.create_testbench("conv1d_testbench", design)
+    build_dir = OnDiskPath("build")
+    design.save_to(build_dir.create_subpath("srcs"))
+    testbench.save_to(build_dir.create_subpath("testbenches"))
+    sim_layer = SimulatedLayer(testbench, GHDLSimulator, working_dir="build")
+    sim_output = sim_layer(input_data)
+    assert sw_output.tolist() == sim_output
