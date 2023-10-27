@@ -74,6 +74,7 @@ def test_verify_hw_sw_equivalence_3_inputs(x):
     assert sw_output.tolist() == sim_output
 
 
+@pytest.mark.simulation
 @pytest.mark.parametrize("x", ([[1.0, 1.0, 1.0, 1.0]], [[0.0, 1.0, 1.0, 0.0]]))
 def test_verify_hw_sw_equivalence_4_inputs(x):
     input_data = torch.Tensor(x)
