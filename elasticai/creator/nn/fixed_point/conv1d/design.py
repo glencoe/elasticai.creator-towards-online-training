@@ -65,9 +65,9 @@ class Conv1d(Design):
                 in_channels=str(self._in_channels),
                 out_channels=str(self._out_channels),
                 kernel_size=str(self._kernel_size),
-                x_address_width="2",
-                y_address_width="1",
-                vector_width="3",
+                x_address_width=str(math.ceil(math.log2(self._input_signal_length))),
+                y_address_width=str(math.ceil(math.log2(self._output_signal_length))),
+                vector_width=str(self._input_signal_length),
                 name=self.name,
             ),
         )
