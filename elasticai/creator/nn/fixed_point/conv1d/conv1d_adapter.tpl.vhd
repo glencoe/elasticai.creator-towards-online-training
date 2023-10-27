@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 
 entity ${name} is
     port (
+        clock : in std_logic;
         enable : in std_logic;
         reset : in std_logic;
         x : in signed(${total_width}-1 downto 0);

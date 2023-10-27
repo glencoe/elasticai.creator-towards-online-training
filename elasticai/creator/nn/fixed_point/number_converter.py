@@ -1,4 +1,7 @@
 import dataclasses
+import math
+
+import torch
 
 from ._number_conversion import (
     bits_to_integer,
@@ -36,6 +39,9 @@ class NumberConverter:
             total_bits=self._fxp_params.total_bits,
             frac_bits=self._fxp_params.frac_bits,
         )
+
+    def rational_to_integer(self, rational: float) -> int:
+        return int(rational * self._fxp_params.frac_bits)
 
     def bits_to_natural(self, pattern: str) -> int:
         return bits_to_rational(pattern, frac_bits=self._fxp_params.frac_bits)

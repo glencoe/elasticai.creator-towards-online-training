@@ -49,8 +49,14 @@ class Conv1d(DesignCreator, Conv1dBase):
         outputs = super().forward(x)
         return outputs.view(*output_shape)
 
-    def create_testbench(self, name: str) -> Conv1dTestbench:
-        return Conv1dTestbench()
+    def create_testbench(self, uut_name: str) -> Conv1dTestbench:
+        return Conv1dTestbench(
+            uut_name=uut_name,
+            total_bits=self._config.total_bits,
+            frac_bits=self._config.frac_bits,
+            signal_length=self._signal_length,
+            kernel_size=self.__flatten_tuple(self.kernel_size)
+        )
 
     def create_design(self, name: str) -> Conv1dDesign:
         def float_to_signed_int(value: float | list) -> int | list:
@@ -58,8 +64,7 @@ class Conv1d(DesignCreator, Conv1dBase):
                 return list(map(float_to_signed_int, value))
             return self._config.as_integer(value)
 
-        def flatten_tuple(x: int | tuple[int, ...]) -> int:
-            return x[0] if isinstance(x, tuple) else x
+
 
         bias = [0] * self.out_channels if self.bias is None else self.bias.tolist()
         signed_int_weights = cast(
@@ -74,7 +79,10 @@ class Conv1d(DesignCreator, Conv1dBase):
             in_channels=self.in_channels,
             out_channels=self.out_channels,
             signal_length=self._signal_length,
-            kernel_size=flatten_tuple(self.kernel_size),
+            kernel_size=self.__flatten_tuple(self.kernel_size),
             weights=signed_int_weights,
             bias=signed_int_bias,
         )
+
+    def __flatten_tuple(self, x: int | tuple[int, ...]) -> int:
+        return x[0] if isinstance(x, tuple) else x
