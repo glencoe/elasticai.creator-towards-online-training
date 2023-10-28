@@ -1,11 +1,36 @@
+from abc import abstractmethod
+from typing import Protocol
+
+from elasticai.creator.vhdl.design.ports import Port
 from elasticai.creator.file_generation.savable import Path
 from elasticai.creator.file_generation.template import (
     InProjectTemplate,
     module_to_package,
 )
 from ..number_converter import NumberConverter, FXPParams
-from .design import Conv1d as Conv1dDesign
 import math
+
+
+class Conv1dDesign(Protocol):
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        ...
+
+    @property
+    @abstractmethod
+    def input_signal_length(self) -> int:
+        ...
+
+    @property
+    @abstractmethod
+    def port(self) -> Port:
+        ...
+
+    @property
+    @abstractmethod
+    def kernel_size(self) -> int:
+        ...
 
 
 class Conv1dTestbench:
