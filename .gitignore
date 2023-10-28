@@ -247,3 +247,6 @@ Temporary Items
 /presentation/presentation.html
 /presentation/presentation.pdf
 /vhdl93-bnf.html
+
+# don't commit poetry.lock since creator is a library
+./.poetry.lock
