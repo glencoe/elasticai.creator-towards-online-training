@@ -82,9 +82,7 @@ class Conv1dTestbench:
 
     def parse_reported_content(self, content: list[str]) -> list[list[float]]:
         result = list()
-        print("content: ", content)
         for line in map(str.strip, content):
-            print("line: ", line)
             if line.startswith("result: "):
                 result.append(line.split(":")[1])
         if len(result) is 0:
