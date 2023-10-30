@@ -81,15 +81,15 @@ class Conv1dTestbench:
         return prepared_inputs
 
     def parse_reported_content(self, content: list[str]) -> list[list[float]]:
-        result = None
+        result = list()
+        print("content: ", content)
         for line in map(str.strip, content):
+            print("line: ", line)
             if line.startswith("result: "):
-                result = line.split(":")[1]
-                break
-        if result is None:
+                result.append(line.split(":")[1])
+        if len(result) is 0:
             raise Exception(content)
         out_channel_content = result
-        out_channel_content = out_channel_content.split(",")
         out_channel_content = [
             self._converter.bits_to_rational(y) for y in out_channel_content
         ]

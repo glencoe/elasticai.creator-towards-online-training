@@ -71,7 +71,8 @@ begin
         variable test_return_signal : signed (${total_bits}-1 downto 0) := (others => '1');
     begin
         if read_done = '1' then
-
+            report "result: " & to_bstring(test_return_signal);
+            report "result: " & to_bstring(test_return_signal);
             report "result: " & to_bstring(test_return_signal);
             finish;
         end if;
