@@ -7,10 +7,12 @@ from elasticai.creator.file_generation.template import (
     InProjectTemplate,
     module_to_package,
 )
+from .design import Conv1d
+
 from ..number_converter import NumberConverter, FXPParams
 import math
 
-
+'''
 class Conv1dDesign(Protocol):
     @property
     @abstractmethod
@@ -31,20 +33,22 @@ class Conv1dDesign(Protocol):
     @abstractmethod
     def kernel_size(self) -> int:
         ...
-
+'''
 
 class Conv1dTestbench:
-    def __init__(self, name: str, uut: Conv1dDesign, fxp_params: FXPParams):
+    def __init__(self, name: str, uut: Conv1d, fxp_params: FXPParams):
         self._converter = NumberConverter(fxp_params)
         self._name = name
         self._uut_name = uut.name
         self._input_signal_length = uut.input_signal_length
+        self._x_address_width = uut.port["x_address"].width
         self._fxp_params = fxp_params
         self._converter = NumberConverter(self._fxp_params)
         self._kernel_size = uut.kernel_size
         self._output_signal_length = math.floor(
             self._input_signal_length - self._kernel_size + 1
         )
+        self._y_address_width = uut.port["y_address"].width
 
     def save_to(self, destination: Path):
         template = InProjectTemplate(
@@ -52,12 +56,11 @@ class Conv1dTestbench:
             file_name="testbench.tpl.vhd",
             parameters={
                 "testbench_name": self.name,
-                "signal_length": str(self._input_signal_length),
+                "input_signal_length": str(self._input_signal_length),
                 "total_bits": str(self._fxp_params.total_bits),
-                "x_address_width": str(math.ceil(math.log2(self._input_signal_length))),
-                "y_address_width": str(
-                    math.ceil(math.log2(self._output_signal_length))
-                ),
+                "x_address_width": str(self._x_address_width),
+                "output_signal_length": str(self._output_signal_length),
+                "y_address_width": str(self._y_address_width),
                 "uut_name": self._uut_name,
             },
         )
@@ -81,14 +84,14 @@ class Conv1dTestbench:
         return prepared_inputs
 
     def parse_reported_content(self, content: list[str]) -> list[list[float]]:
-        result = list()
+        results = dict()
         for line in map(str.strip, content):
-            if line.startswith("result: "):
-                result.append(line.split(":")[1])
-        if len(result) is 0:
+            if line.startswith("results: "):
+                batch = self._converter.bits_to_rational(line.split(":")[1].split(",")[0])
+                output = self._converter.bits_to_rational(line.split(":")[1].split(",")[1])
+                if type(results[batch]) != list:
+                    results[batch] = list()
+                results[batch].append(output)
+        if len(results) is 0:
             raise Exception(content)
-        out_channel_content = result
-        out_channel_content = [
-            self._converter.bits_to_rational(y) for y in out_channel_content
-        ]
-        return [out_channel_content]
+        return results

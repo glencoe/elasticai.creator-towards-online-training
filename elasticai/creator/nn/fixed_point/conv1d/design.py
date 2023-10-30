@@ -79,6 +79,20 @@ class Conv1d(Design):
         )
         destination.create_subpath(self.name).as_file(".vhd").write(template)
 
+        core_component = InProjectTemplate(
+            package=module_to_package(self.__module__),
+            file_name="conv1d.vhd",
+            parameters={},
+        )
+        destination.create_subpath("conv1d_fxp_MAC_RoundToZero").as_file(".vhd").write(core_component)
+
+        mac = InProjectTemplate(
+            package="elasticai.creator.nn.fixed_point.mac",
+            file_name="fxp_mac.vhd",
+            parameters={},
+        )
+        destination.create_subpath("fxp_mac").as_file(".vhd").write(mac)
+
         weights_rom = Rom(
             name=rom_name["weights"],
             data_width=self._total_bits,

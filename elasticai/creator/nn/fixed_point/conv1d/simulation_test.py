@@ -75,14 +75,14 @@ def test_verify_hw_sw_equivalence_3_inputs(x):
 
 
 @pytest.mark.simulation
-@pytest.mark.parametrize("x", ([[1.0, 1.0, 1.0, 1.0]], [[0.0, 1.0, 1.0, 0.0]]))
+@pytest.mark.parametrize("x", ([[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]], [[0.0, 1.0, 1.0, 0.0], [1.0, 1.0, 1.0, 1.0]]))
 def test_verify_hw_sw_equivalence_4_inputs(x):
     input_data = torch.Tensor(x)
     sw_conv = Conv1d(
         total_bits=4,
         frac_bits=1,
-        in_channels=1,
-        out_channels=1,
+        in_channels=2,
+        out_channels=2,
         signal_length=4,
         kernel_size=2,
         bias=False,
