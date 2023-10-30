@@ -21,7 +21,7 @@ class MacDesign(Savable):
         )
         core_component = InProjectTemplate(
             package="elasticai.creator.nn.fixed_point.mac",
-            file_name="fxp_mac.tpl.vhd",
+            file_name="fxp_mac.vhd",
             parameters={},
         )
         destination.create_subpath("fxp_mac").as_file(".vhd").write(core_component)
