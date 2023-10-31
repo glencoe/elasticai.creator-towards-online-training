@@ -82,7 +82,7 @@ begin
             end loop;
             end_of_file <= '0';
         end if;
-    end process;
+    end process read_inputs_to_buffer;
 
     start_test : process (clock)
         variable test_return_signal : signed (${total_bits}-1 downto 0) := (others => '1');
@@ -117,6 +117,8 @@ begin
                 test_state <= s_finish_simulation;
             end if;
         elsif test_state = s_finish_simulation then
+            report "status: test_state = s_finish_simulation";
+            report "status: simulation finished";
             finish;
         end if;
     end process;

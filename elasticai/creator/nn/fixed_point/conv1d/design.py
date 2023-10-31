@@ -9,6 +9,7 @@ from elasticai.creator.vhdl.auto_wire_protocols.port_definitions import create_p
 from elasticai.creator.vhdl.design.design import Design
 from elasticai.creator.vhdl.design.ports import Port
 from elasticai.creator.vhdl.shared_designs.rom import Rom
+from .testbench import Conv1dDesign as Conv1dDesignProtocol
 
 
 def generate_parameters_from_port(port: Port) -> dict[str, str]:
@@ -19,7 +20,7 @@ def generate_parameters_from_port(port: Port) -> dict[str, str]:
     return params
 
 
-class Conv1d(Design):
+class Conv1d(Design, Conv1dDesignProtocol):
     def __init__(
         self,
         name: str,
@@ -37,8 +38,8 @@ class Conv1d(Design):
         self._frac_bits = frac_bits
         self._in_channels = in_channels
         self._out_channels = out_channels
-        self.input_signal_length = signal_length
-        self.kernel_size = kernel_size
+        self._input_signal_length = signal_length
+        self._kernel_size = kernel_size
         self._weights = weights
         self._bias = bias
         self.output_signal_length = math.floor(
@@ -50,6 +51,19 @@ class Conv1d(Design):
             x_count=self.input_signal_length * self._in_channels,
             y_count=self.output_signal_length * self._out_channels,
         )
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def input_signal_length(self) -> int:
+        return self._input_signal_length
+
+    @property
+    def kernel_size(self) -> int:
+        return self._kernel_size
+
 
     @property
     def port(self) -> Port:

@@ -32,7 +32,7 @@ def save_design(design: Conv1d) -> dict[str, str]:
 def test_saved_design_contains_needed_files(conv1d_design: Conv1d) -> None:
     saved_files = save_design(conv1d_design)
 
-    expected_files = {"conv1d_w_rom.vhd", "conv1d_b_rom.vhd", "conv1d.vhd"}
+    expected_files = {"conv1d_w_rom.vhd", "conv1d_b_rom.vhd", "conv1d.vhd", "conv1d_fxp_MAC_RoundToZero.vhd", "fxp_mac.vhd"}
     actual_files = set(saved_files.keys())
 
     assert expected_files == actual_files

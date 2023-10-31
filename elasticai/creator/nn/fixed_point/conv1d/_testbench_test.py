@@ -24,7 +24,7 @@ class DummyConv1d:
 
 def parameters_for_reported_content_parsing():
     def add_expected_prefix_to_pairs(pairs):
-        return [(f"result: {content}", number) for content, number in pairs]
+        return [(f"result: {0},{content}", number) for content, number in pairs]
 
     def combine_pairs_with_fxp_params(fxp_params, input_expected_pairs):
         return [
@@ -35,9 +35,9 @@ def parameters_for_reported_content_parsing():
     return combine_pairs_with_fxp_params(
         fxp_params=FXPParams(total_bits=3, frac_bits=0),
         input_expected_pairs=[
-            ("010", [2.0]),
-            ("001, 010", [1.0, 2.0]),
-            ("111, 001", [-1.0, 1.0]),
+            ("010", [[2.0]]),
+            ("001, 010", [[1.0, 2.0]]),
+            ("111, 001", [[-1.0, 1.0]]),
         ],
     ) + combine_pairs_with_fxp_params(
         fxp_params=FXPParams(total_bits=4, frac_bits=1),

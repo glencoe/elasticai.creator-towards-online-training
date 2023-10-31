@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from typing import Protocol
+from collections import defaultdict
 
 from elasticai.creator.vhdl.design.ports import Port
 from elasticai.creator.file_generation.savable import Path
@@ -7,12 +8,11 @@ from elasticai.creator.file_generation.template import (
     InProjectTemplate,
     module_to_package,
 )
-from .design import Conv1d
 
-from ..number_converter import NumberConverter, FXPParams
+from elasticai.creator.nn.fixed_point.number_converter import NumberConverter, FXPParams
 import math
 
-'''
+
 class Conv1dDesign(Protocol):
     @property
     @abstractmethod
@@ -33,10 +33,10 @@ class Conv1dDesign(Protocol):
     @abstractmethod
     def kernel_size(self) -> int:
         ...
-'''
+
 
 class Conv1dTestbench:
-    def __init__(self, name: str, uut: Conv1d, fxp_params: FXPParams):
+    def __init__(self, name: str, uut: Conv1dDesign, fxp_params: FXPParams):
         self._converter = NumberConverter(fxp_params)
         self._name = name
         self._uut_name = uut.name
@@ -84,17 +84,18 @@ class Conv1dTestbench:
         return prepared_inputs
 
     def parse_reported_content(self, content: list[str]) -> list[list[float]]:
-        results = dict()
+        results = defaultdict(list)
         print(content)
         for line in map(str.strip, content):
-            print(line)
-            if line.startswith("results: "):
-                batch = self._converter.bits_to_rational(line.split(":")[1].split(",")[0])
+            if line.startswith("result: "):
+                batch = int(self._converter.bits_to_rational(line.split(":")[1].split(",")[0]))
+                print("batch: ",  batch)
                 output = self._converter.bits_to_rational(line.split(":")[1].split(",")[1])
-                if type(results[batch]) != list:
-                    results[batch] = list()
+                print("output: ", output)
                 results[batch].append(output)
+        print('results: ', results.items())
+
         if len(results) is 0:
             pass
             #raise Exception(content)
-        return results
+        return list(results)
