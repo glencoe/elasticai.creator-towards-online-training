@@ -79,8 +79,8 @@ def test_verify_hw_sw_equivalence_3_inputs(x):
 def test_verify_hw_sw_equivalence_4_inputs(x):
     input_data = torch.Tensor(x)
     sw_conv = Conv1d(
-        total_bits=4,
-        frac_bits=1,
+        total_bits=5,
+        frac_bits=2,
         in_channels=2,
         out_channels=2,
         signal_length=4,

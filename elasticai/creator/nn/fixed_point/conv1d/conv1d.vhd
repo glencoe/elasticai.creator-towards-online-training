@@ -29,21 +29,22 @@ end;
 architecture rtl of conv1d_fxp_MAC_RoundToZero is
     constant FXP_ONE : signed(TOTAL_WIDTH-1 downto 0) := to_signed(2**FRAC_WIDTH,TOTAL_WIDTH);
 
+    signal mac_reset : std_logic;
     signal next_sample : std_logic;
     signal x1 : signed(TOTAL_WIDTH-1 downto 0);
     signal x2 : signed(TOTAL_WIDTH-1 downto 0);
     signal sum : signed(TOTAL_WIDTH-1 downto 0);
     signal mac_done : std_logic;
-    type data is array (0 to OUT_CHANNELS*VECTOR_WIDTH-1) of signed(TOTAL_WIDTH-1 downto 0);
+    type data is array (0 to OUT_CHANNELS*(VECTOR_WIDTH-KERNEL_SIZE+1)-1) of signed(TOTAL_WIDTH-1 downto 0);
     signal y_ram : data;
 
     signal n_clock : std_logic;
-    signal w_in : std_logic_vector(TOTAL_WIDTH-1 downto 0);
-    signal b_in : std_logic_vector(TOTAL_WIDTH-1 downto 0);
-    signal addr_w : std_logic_vector(OUT_CHANNELS*IN_CHANNELS*KERNEL_SIZE-1 downto 0); -- too big round(log2())
-    signal addr_b : std_logic_vector(OUT_CHANNELS*IN_CHANNELS-1 downto 0); -- too big round(log2())
+    signal w : signed(TOTAL_WIDTH-1 downto 0);
+    signal b : signed(TOTAL_WIDTH-1 downto 0);
+    signal w_address : unsigned(OUT_CHANNELS*IN_CHANNELS*KERNEL_SIZE-1 downto 0); -- too big round(log2())
+    signal b_address : unsigned(OUT_CHANNELS*IN_CHANNELS-1 downto 0); -- too big round(log2())
 
-    type t_state is (s_reset, s_computing, s_done);
+    type t_state is (s_reset, s_data_transfer_MAC, s_MAC_compute, s_reset_mac, s_done);
     signal state : t_state;
 begin
     -- connecting signals to ports
@@ -57,7 +58,7 @@ begin
             FRAC_WIDTH => FRAC_WIDTH
         )
         port map (
-            reset => reset,
+            reset => mac_reset,
             next_sample => next_sample,
             x1 => x1,
             x2 => x2,
@@ -65,42 +66,79 @@ begin
             done => done
         );
 
-    process (clock)
-        variable var_kernel_counter : unsigned(KERNEL_SIZE-1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
-        variable var_input_counter : unsigned(VECTOR_WIDTH-1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
-        variable var_input_channel_counter : unsigned(IN_CHANNELS-1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
-        variable var_output_channel_counter : unsigned(OUT_CHANNELS-1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
+    main : process (clock)
+        variable kernel_counter : unsigned(KERNEL_SIZE-1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
+        variable input_counter : unsigned(VECTOR_WIDTH-1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
+        variable input_channel_counter : unsigned(IN_CHANNELS-1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
+        variable output_channel_counter : unsigned(OUT_CHANNELS-1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
+        variable bias_added : std_logic;
     begin
         if reset = '1' then
-            addr_w <= (others => '0');
-            addr_b <= (others => '0');
-            var_kernel_counter := (others => '0');
-            var_input_counter := (others => '0');
-            var_input_channel_counter := (others => '0');
-            var_output_channel_counter := (others => '0');
+            -- reset such that MAC_enable triggers MAB_enable directly
+            x_address <= (others => '0');
+            w_address <= (others => '0');
+            b_address <= (others => '0');
+            kernel_counter := (others => '0');
+            input_counter := (others => '0');
+            input_channel_counter := (others => '0');
+            output_channel_counter := (others => '0');
+            bias_added := '0';
+            next_sample <= '0';
             done <= '0';
+            mac_reset <= '1';
             state <= s_reset;
         else
-            if enable = '1' AND state = s_computing then
-                if var_input_counter /= VECTOR_WIDTH-1 then
-                    if var_output_channel_counter /= OUT_CHANNELS-1 then
-                        if var_input_channel_counter /= IN_CHANNELS-1 then
-                            if var_kernel_counter /= KERNEL_SIZE-1 then
+            if enable = '1' AND state = s_reset then
+                mac_reset <= '0';
+                -- start first MAC_Computation
+                next_sample <= '1';
+                state <= s_data_transfer_MAC;
+            elsif enable = '1' AND state = s_data_transfer_MAC then
+                mac_reset <= '0';
+                if kernel_counter /= KERNEL_SIZE-1 then
+                    --write MAC input for next cycle
+                    x_address <= input_channel_counter * VECTOR_WIDTH + kernel_counter + input_counter;
+                    w_address <= input_channel_counter * VECTOR_WIDTH + kernel_counter;
+                    x1 <= x;
+                    x2 <= w;
 
-
-                                var_kernel_counter := var_kernel_counter + 1;
-                            end if;
-                            var_input_channel_counter := var_input_channel_counter + 1;
-                        end if;
-                        var_output_channel_counter := var_output_channel_counter + 1;
+                    state <= s_MAC_compute;
+                    kernel_counter := kernel_counter + 1;
+                elsif input_channel_counter /= IN_CHANNELS-1 then
+                    kernel_counter := (others => '0');
+                    input_channel_counter := input_channel_counter + 1;
+                elsif output_channel_counter /= OUT_CHANNELS-1 then
+                    if bias_added = '0' then
+                        b_address <= output_channel_counter;
+                        x1 <= FXP_ONE;
+                        x2 <= b;
+                        bias_added := '1';
+                        state <= s_MAC_compute;
+                    else
+                        --read MAC output from last computation and write to y_ram
+                        y_ram(to_integer(output_channel_counter*(VECTOR_WIDTH-KERNEL_SIZE+1)+input_counter+kernel_counter)) <= sum;
+                        bias_added := '0';
+                        input_channel_counter := (others => '0');
+                        output_channel_counter := output_channel_counter + 1;
+                        state <= s_reset_MAC;
                     end if;
-                    var_input_counter := var_input_counter + 1;
+                elsif input_counter /= VECTOR_WIDTH-KERNEL_SIZE-1 then
+                    output_channel_counter := (others => '0');
+                    input_counter := input_counter + 1;
+                else
+                    state <= s_done;
                 end if;
+            elsif state = s_MAC_compute then
+                next_sample <= '0';
+                state <= s_data_transfer_MAC;
+            elsif state = s_reset_MAC then
+                mac_reset <= '1';
+                state <= s_data_transfer_MAC;
             end if;
         end if;
-    end process;
+    end process main;
 
-    y_reading : process (clock, state)
+    y_writing : process (clock, state)
     begin
         if state=s_done then
             if falling_edge(clock) then
@@ -109,15 +147,15 @@ begin
                 y <= y_ram(to_integer(unsigned(y_address)));
             end if;
         end if;
-    end process y_reading;
+    end process y_writing;
 
     -- Weights
     rom_w : entity work.conv1d_w_rom(rtl)
     port map  (
         clk  => n_clock,
         en   => '1',
-        addr => addr_w,
-        data => w_in
+        addr => w_address,
+        data => w
     );
 
     -- Bias
@@ -125,8 +163,8 @@ begin
     port map  (
         clk  => n_clock,
         en   => '1',
-        addr => addr_b,
-        data => b_in
+        addr => b_address,
+        data => b
     );
 
 end;

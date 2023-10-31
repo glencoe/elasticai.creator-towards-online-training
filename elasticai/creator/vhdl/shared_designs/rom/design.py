@@ -25,7 +25,7 @@ class Rom:
 
     def save_to(self, destination: Path):
         template = InProjectTemplate(
-            file_name="rom.tpl.vhd",
+            file_name="rom_with_signed_values_unsigned_address.tpl.vhd",
             package=module_to_package(self.__module__),
             parameters=dict(
                 rom_value=self._rom_values(),
