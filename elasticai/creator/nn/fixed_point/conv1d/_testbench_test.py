@@ -6,7 +6,7 @@ import torch
 from elasticai.creator.vhdl.auto_wire_protocols.port_definitions import create_port
 from elasticai.creator.vhdl.design.ports import Port
 from .testbench import Conv1dTestbench, Conv1dDesign
-from ..number_converter import FXPParams
+from ..number_converter import FXPParams, NumberConverter
 
 
 class DummyConv1d:
@@ -24,7 +24,16 @@ class DummyConv1d:
 
 def parameters_for_reported_content_parsing():
     def add_expected_prefix_to_pairs(pairs):
-        return [(f"result: {0},{content}", number) for content, number in pairs]
+        _converter_for_batch = NumberConverter(FXPParams(8, 0))  # max for 255 lines of inputs
+        pairs_with_prefix = list()
+        for i, (batch_text, batch_number) in enumerate(pairs):
+            pairs_with_prefix.append(list())
+            pairs_with_prefix[i].append(list())
+            pairs_with_prefix[i].append(batch_number)
+            for i2, inputs_text in enumerate(batch_text):
+                for value_text in inputs_text:
+                    pairs_with_prefix[i][0].append(f"result: {_converter_for_batch.integer_to_bits(i2)}, {value_text}")
+        return pairs_with_prefix
 
     def combine_pairs_with_fxp_params(fxp_params, input_expected_pairs):
         return [
@@ -35,13 +44,14 @@ def parameters_for_reported_content_parsing():
     return combine_pairs_with_fxp_params(
         fxp_params=FXPParams(total_bits=3, frac_bits=0),
         input_expected_pairs=[
-            ("010", [[2.0]]),
-            ("001, 010", [[1.0, 2.0]]),
-            ("111, 001", [[-1.0, 1.0]]),
+            ([["010"]], [[2.0]]),
+            ([["001", "010"]], [[1.0, 2.0]]),
+            ([["111", "001"]], [[-1.0, 1.0]]),
         ],
     ) + combine_pairs_with_fxp_params(
         fxp_params=FXPParams(total_bits=4, frac_bits=1),
-        input_expected_pairs=[("0001, 1111", [0.5, -0.5])],
+        input_expected_pairs=[([["0001", "1111"]], [[0.5, -0.5]]),
+                              ([["0001", "0011"], ["1000", "1111"]], [[0.5, 1.5], [-4.0, -0.5]])],
     )
 
 
@@ -60,7 +70,7 @@ def test_parse_reported_content(fxp_params, reported, y, create_uut):
     bench = Conv1dTestbench(
         name="conv1d_testbench", fxp_params=fxp_params, uut=create_uut(fxp_params)
     )
-    assert [y] == bench.parse_reported_content([reported])
+    assert y == bench.parse_reported_content(reported)
 
 
 def test_input_preparation(create_uut):

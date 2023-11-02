@@ -38,6 +38,7 @@ class Conv1dDesign(Protocol):
 class Conv1dTestbench:
     def __init__(self, name: str, uut: Conv1dDesign, fxp_params: FXPParams):
         self._converter = NumberConverter(fxp_params)
+        self._converter_for_batch = NumberConverter(FXPParams(8, 0))  # max for 255 lines of inputs
         self._name = name
         self._uut_name = uut.name
         self._input_signal_length = uut.input_signal_length
@@ -84,18 +85,15 @@ class Conv1dTestbench:
         return prepared_inputs
 
     def parse_reported_content(self, content: list[str]) -> list[list[float]]:
-        results = defaultdict(list)
-        print(content)
+        results_dict = defaultdict(list)
         for line in map(str.strip, content):
             if line.startswith("result: "):
-                batch = int(self._converter.bits_to_rational(line.split(":")[1].split(",")[0]))
-                print("batch: ",  batch)
-                output = self._converter.bits_to_rational(line.split(":")[1].split(",")[1])
-                print("output: ", output)
-                results[batch].append(output)
-        print('results: ', results.items())
-
+                batch = int(self._converter_for_batch.bits_to_rational(line.split(":")[1].split(",")[0][1:]))
+                output = self._converter.bits_to_rational(line.split(":")[1].split(",")[1][1:])
+                results_dict[batch].append(output)
+        results = list()
+        for x in results_dict.items():
+            results.append(x[1])
         if len(results) is 0:
-            pass
-            #raise Exception(content)
+            raise Exception(content)
         return list(results)
