@@ -22,7 +22,7 @@ begin
     ${name}_fxp_MAC : entity work.fxp_MAC_RoundToZero
         generic map(
             VECTOR_WIDTH => VECTOR_WIDTH,
-            TOTAL_WIDTH=>TOTAL_WIDTH,
+            TOTAL_WIDTH => TOTAL_WIDTH,
             FRAC_WIDTH => FRAC_WIDTH
         )
         port map (

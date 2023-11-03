@@ -1,0 +1,3 @@
+class Rom:
+    def _int_to_bit_pattern(self, number: int, total_bits: int) -> str:
+        ...

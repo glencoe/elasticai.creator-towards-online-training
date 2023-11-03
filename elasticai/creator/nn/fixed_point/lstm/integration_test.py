@@ -8,7 +8,7 @@ from elasticai.creator.nn.fixed_point.lstm.layer import (
 )
 
 
-@pytest.skip
+@pytest.mark.skip
 @pytest.mark.simulation
 def test_lstm_network_simulation(tmp_path):
     hidden_size = 20

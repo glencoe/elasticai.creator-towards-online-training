@@ -22,9 +22,13 @@ class Rom:
         self._values = [to_vhdl_binary_string(x, self._data_width) for x in
                         self._append_zeros_to_fill_addressable_memory(values_as_integers)]
 
-    def save_to(self, destination: Path):
+    def save_to(self, destination: Path, std_logic_vector: bool = True):
+        if std_logic_vector:
+            file_name = "rom.tpl.vhd"
+        else:
+            file_name = "rom_with_signed_values_unsigned_address.tpl.vhd"
         template = InProjectTemplate(
-            file_name="rom.tpl.vhd",
+            file_name=file_name,
             package=module_to_package(self.__module__),
             parameters=dict(
                 rom_value=self._rom_values(),
