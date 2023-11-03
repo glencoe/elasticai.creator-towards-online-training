@@ -42,16 +42,17 @@ def test_weight_rom_code_generated_correctly(conv1d_design: Conv1d) -> None:
     expected_code = """library ieee;
     use ieee.std_logic_1164.all;
     use ieee.std_logic_unsigned.all;
+    use ieee.numeric_std.all;
 entity conv1d_w_rom is
     port (
         clk : in std_logic;
         en : in std_logic;
-        addr : in std_logic_vector(3-1 downto 0);
-        data : out std_logic_vector(16-1 downto 0)
+        addr : in unsigned(3-1 downto 0);
+        data : out signed(16-1 downto 0)
     );
 end entity conv1d_w_rom;
 architecture rtl of conv1d_w_rom is
-    type conv1d_w_rom_array_t is array (0 to 2**3-1) of std_logic_vector(16-1 downto 0);
+    type conv1d_w_rom_array_t is array (0 to 2**3-1) of signed(16-1 downto 0);
     signal ROM : conv1d_w_rom_array_t:=("0000000000000001","0000000000000001","0000000000000001","0000000000000001","0000000000000001","0000000000000001","0000000000000000","0000000000000000");
     attribute rom_style : string;
     attribute rom_style of ROM : signal is "auto";
@@ -60,7 +61,7 @@ begin
     begin
         if rising_edge(clk) then
             if (en = '1') then
-                data <= ROM(conv_integer(addr));
+                data <= ROM(to_integer(addr));
             end if;
         end if;
     end process ROM_process;
@@ -74,16 +75,17 @@ def test_bias_rom_code_generated_correctly(conv1d_design: Conv1d) -> None:
     expected_code = """library ieee;
     use ieee.std_logic_1164.all;
     use ieee.std_logic_unsigned.all;
+    use ieee.numeric_std.all;
 entity conv1d_b_rom is
     port (
         clk : in std_logic;
         en : in std_logic;
-        addr : in std_logic_vector(1-1 downto 0);
-        data : out std_logic_vector(16-1 downto 0)
+        addr : in unsigned(1-1 downto 0);
+        data : out signed(16-1 downto 0)
     );
 end entity conv1d_b_rom;
 architecture rtl of conv1d_b_rom is
-    type conv1d_b_rom_array_t is array (0 to 2**1-1) of std_logic_vector(16-1 downto 0);
+    type conv1d_b_rom_array_t is array (0 to 2**1-1) of signed(16-1 downto 0);
     signal ROM : conv1d_b_rom_array_t:=("0000000000000001","0000000000000001");
     attribute rom_style : string;
     attribute rom_style of ROM : signal is "auto";
@@ -92,7 +94,7 @@ begin
     begin
         if rising_edge(clk) then
             if (en = '1') then
-                data <= ROM(conv_integer(addr));
+                data <= ROM(to_integer(addr));
             end if;
         end if;
     end process ROM_process;
