@@ -81,7 +81,7 @@ def address_width(rom_code) -> Callable[[list[int]], int]:
         actual = 0
         for line in text:
             match = re.match(
-                r"\s+addr\s?:\s?in std_logic_vector\((\d+)-1 downto 0\);", line
+                r"\s+addr\s?:\s?in std_logic_vector\((\d+)\s?-\s?1 downto 0\);", line
             )
             if match:
                 actual = int(match.group(1))

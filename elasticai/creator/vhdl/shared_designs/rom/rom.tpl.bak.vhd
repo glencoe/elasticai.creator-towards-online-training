@@ -1,4 +1,6 @@
-$library_section
+library ieee;
+    use ieee.std_logic_1164.all;
+    use ieee.std_logic_unsigned.all;
 entity ${name} is
     port (
         clk : in std_logic;
