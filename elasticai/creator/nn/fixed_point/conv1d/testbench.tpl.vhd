@@ -12,34 +12,24 @@ entity ${testbench_name} is
 end;
 
 architecture rtl of ${testbench_name} is
-    -- Test
-    type TYPE_STATE is (s_prepare_uut_input, s_reset, s_start_computation, s_write_uut_output_address, s_read_uut_output, s_finish_simulation);
-    signal test_state : TYPE_STATE := s_prepare_uut_input;
-    signal trigger_start_up : std_logic := '0';
 
     --CLOCK
-    signal clock_period : time := 2 ps;
+    signal clock_period : time := 2 ns;
 
     --DATA INPUT
     type data is array (0 to ${input_signal_length}-1) of signed(${total_bits}-1 downto 0);
     signal data_in : data;
-    file input_file : text;
-    signal input_cycles : signed(7 downto 0); --max for 255 lines of inputs
-    signal end_of_file : std_logic := '0';
+    file input_file : text open read_mode is INPUTS_FILE_PATH;
 
     --UUT
-    signal clock : std_logic;
+    signal clock : std_logic := '0';
     signal enable : std_logic := '0';
     signal reset : std_logic := '1';
     signal x : signed(${total_bits}-1 downto 0);
     signal x_address : unsigned(${x_address_width}-1 downto 0);
     signal y : signed(${total_bits}-1 downto 0);
     signal y_address : unsigned(${y_address_width}-1 downto 0);
-    signal done : std_logic := '0';
-
-
-    --MÜLL
-    signal xxxx : signed (${output_signal_length}-1 downto 0);
+    signal done : std_logic;
 
 begin
     UUT : entity work.${uut_name}
@@ -49,77 +39,90 @@ begin
     begin
         clock <= not clock;
         wait for clock_period/2;
-        trigger_start_up <= '1';
     end process;
 
-    read_inputs_to_buffer : process
+    start_test : process (clock)
         variable v_ILINE     : line;
         variable v_in : signed(${total_bits}-1 downto 0);
         variable v_SPACE     : character;
-    begin
-        report "status: reading file " & INPUTS_FILE_PATH;
-
-        if test_state = s_prepare_uut_input then
-            file_open(input_file, INPUTS_FILE_PATH,  read_mode);
-            readline(input_file, v_ILINE);
-            while not endfile(input_file) loop
-                report "status: start reading batch";
-                readline(input_file, v_ILINE); -- read header
-
-                for i in 0 to ${input_signal_length}-1 loop
-                    read(v_ILINE, v_in); -- read values
-                    if i /= ${input_signal_length}-1 then -- check if not last item of row
-                        read(v_ILINE, v_SPACE);
-                    end if;
-                    data_in(i) <= v_in;
-                    report "debug: input_data: " & to_bstring(v_in);
-
-                end loop;
-                test_state <= s_reset;
-                report "status: data for batch loaded!";
-                wait until test_state = s_prepare_uut_input;
-                input_cycles <= input_cycles + 1;
-            end loop;
-            end_of_file <= '0';
-        end if;
-    end process read_inputs_to_buffer;
-
-    start_test : process (clock)
         variable test_return_signal : signed (${total_bits}-1 downto 0) := (others => '1');
+        type TYPE_STATE is (s_start_up, s_load_batch, s_reset, s_start_computation, s_wait_for_computation_done, s_write_uut_output_address, s_read_uut_output, s_finish_simulation);
+        variable test_state : TYPE_STATE := s_start_up;
+        variable input_cycles : signed(7 downto 0) := (others => '0'); --max for 255 lines of inputs
     begin
-        if test_state = s_reset then
-            report "status: test_state = s_reset";
-            reset <= '1';
-            enable <= '0';
-            test_state <= s_start_computation;
-            y_address <= (others => '0');
-        elsif test_state = s_start_computation then
-            report "status: test_state = s_start_computation";
-            reset <= '0';
-            enable <= '1';
-            x <= data_in(to_integer(unsigned(x_address)));
-            if done = '1' then
-                test_state <= s_write_uut_output_address;
-                y_address <= y_address - 1;
+        if rising_edge(clock) then
+            if test_state = s_start_up then
+                report "status: reading file " & INPUTS_FILE_PATH;
+                --file_open(input_file, INPUTS_FILE_PATH, read_mode);
+                readline(input_file, v_ILINE); -- read header
+                test_state := s_load_batch;
+            elsif test_state = s_load_batch then
+                if endfile(input_file) then
+                    test_state := s_finish_simulation;
+                else
+                    report "status: start reading batch";
+                    readline(input_file, v_ILINE);
+                    for i in 0 to ${input_signal_length}-1 loop
+                        read(v_ILINE, v_in); -- read values
+                        if i /= ${input_signal_length}-1 then -- check if not last item of row
+                            read(v_ILINE, v_SPACE);
+                        end if;
+                        data_in(i) <= v_in;
+                        report "debug: input_data: " & to_bstring(v_in);
+                    end loop;
+                    report "status: data for batch loaded!";
+                    test_state := s_reset;
+                end if;
+            elsif test_state = s_reset then
+                report "status: test_state = s_reset";
+                reset <= '1';
+                enable <= '0';
+                test_state := s_start_computation;
+                y_address <= (others => '0');
+            elsif test_state = s_start_computation then
+                report "status: test_state = s_start_computation";
+                reset <= '0';
+                enable <= '1';
+                x <= data_in(to_integer(x_address));
+                test_state := s_wait_for_computation_done;
+            elsif test_state = s_wait_for_computation_done then
+                report "status: test_state = s_wait_for_computation_done";
+                if done = '1' then
+                    report "status: computation finished";
+                    test_state := s_write_uut_output_address;
+                    y_address <= y_address - 1;
+                end if;
+            elsif test_state = s_write_uut_output_address then
+                report "status: test_state = s_write_uut_output_address";
+                y_address <= y_address + 1;
+                test_state := s_read_uut_output;
+            elsif test_state = s_read_uut_output then
+                report "status: test_state = s_read_uut_output";
+                report "result: " & to_bstring(input_cycles) & "," & to_bstring(y);
+                if y_address /= ${output_signal_length}-1 then
+                    test_state := s_write_uut_output_address;
+                else
+                    input_cycles := input_cycles + 1;
+                    test_state := s_load_batch;
+                end if;
+            elsif test_state = s_finish_simulation then
+                report "status: test_state = s_finish_simulation";
+                report "status: simulation finished";
+                finish;
             end if;
-        elsif test_state = s_write_uut_output_address then
-            report "status: test_state = s_write_uut_output_address";
-            y_address <= y_address + 1;
-            test_state <= s_read_uut_output;
-        elsif test_state = s_read_uut_output then
-            report "status: test_state = s_read_uut_output";
-            report "result: " & to_bstring(input_cycles) & "," & to_bstring(y);
-            if y_address /= ${output_signal_length}-1 then
-                test_state <= s_write_uut_output_address;
-            elsif end_of_file = '0' then
-                test_state <= s_prepare_uut_input;
+        end if;
+    end process;
+
+    end_after_10000cycles : process (clock)
+    variable i : integer range 0 to 10000;
+    begin
+        if rising_edge(clock) then
+            if i = 100 then
+                report("OUT of TIME");
+                finish;
             else
-                test_state <= s_finish_simulation;
+                i := i + 1;
             end if;
-        elsif test_state = s_finish_simulation then
-            report "status: test_state = s_finish_simulation";
-            report "status: simulation finished";
-            finish;
         end if;
     end process;
 

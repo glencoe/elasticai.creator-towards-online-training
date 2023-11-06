@@ -124,6 +124,8 @@ def test_throw_error_for_inputs_out_of_range():
         #    + 11111 11000
         #   -> 11111 10110 -> 111(11 101)10 -> rounding up: 111(11 110)10 -> 11110
         ((-0.25, -1.0), (0.5, 0.5)),
+        # OverflowhandlingError
+        ((3.75, 3.5, -3.75), (3.75, 1.00, 3.75))
     ],
 )
 def test_torch_layer_behaves_as_reference_impl(x1, x2):

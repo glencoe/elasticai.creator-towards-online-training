@@ -86,11 +86,19 @@ class Conv1dTestbench:
 
     def parse_reported_content(self, content: list[str]) -> list[list[float]]:
         results_dict = defaultdict(list)
+        print()
         for line in map(str.strip, content):
             if line.startswith("result: "):
-                batch = int(self._converter_for_batch.bits_to_rational(line.split(":")[1].split(",")[0][1:]))
-                output = self._converter.bits_to_rational(line.split(":")[1].split(",")[1][1:])
+                batch_text = line.split(":")[1].split(",")[0][1:]
+                output_text = line.split(":")[1].split(",")[1][1:]
+                batch = int(self._converter_for_batch.bits_to_rational(batch_text))
+                if "U" not in line.split(":")[1].split(",")[1][1:]:
+                    output = self._converter.bits_to_rational(output_text)
+                else:
+                    output = output_text
                 results_dict[batch].append(output)
+            else:
+                print(line)
         results = list()
         for x in results_dict.items():
             results.append(x[1])

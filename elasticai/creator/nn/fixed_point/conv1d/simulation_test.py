@@ -44,9 +44,19 @@ class SimulatedLayer:
 
     def _write_csv(self, inputs):
         with open(self._inputs_file_path, "w") as f:
-            writer = csv.DictWriter(f, fieldnames=inputs[0].keys())
-            writer.writeheader()
-            writer.writerows(inputs)
+            print()
+            print(inputs)
+            header = [x for x in inputs[0].keys()]
+            f.write(" ".join(header) + "\n")
+            for i, row in enumerate(inputs):
+                for key, value in row.items():
+                    f.write(value + " ")
+                f.write("\n")
+
+
+            #writer = csv.DictWriter(f, fieldnames=inputs[0].keys())
+            #writer.writeheader()
+            #writer.writerows(inputs)
 
 
 @pytest.mark.simulation
