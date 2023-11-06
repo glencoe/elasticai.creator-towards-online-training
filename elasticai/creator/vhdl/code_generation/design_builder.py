@@ -1,4 +1,4 @@
-from creator.vhdl.code_generation.language import (
+from elasticai.creator.vhdl.code_generation.language import (
     IEEE,
     Architecture,
     Direction,

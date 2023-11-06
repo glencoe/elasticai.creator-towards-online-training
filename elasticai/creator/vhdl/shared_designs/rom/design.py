@@ -1,5 +1,11 @@
-from creator.vhdl.code_generation.design_builder import DesignBuilder
-from creator.vhdl.code_generation.language import (
+from elasticai.creator.file_generation.savable import Path
+from elasticai.creator.file_generation.template import SimpleTemplate
+from elasticai.creator.vhdl.code_generation.addressable import calculate_address_width
+from elasticai.creator.vhdl.code_generation.code_abstractions import (
+    to_vhdl_binary_string,
+)
+from elasticai.creator.vhdl.code_generation.design_builder import DesignBuilder
+from elasticai.creator.vhdl.code_generation.language import (
     IEEE,
     Architecture,
     Direction,
@@ -9,13 +15,6 @@ from creator.vhdl.code_generation.language import (
     Type,
     VectorType,
     VHDLPackage,
-)
-
-from elasticai.creator.file_generation.savable import Path
-from elasticai.creator.file_generation.template import SimpleTemplate
-from elasticai.creator.vhdl.code_generation.addressable import calculate_address_width
-from elasticai.creator.vhdl.code_generation.code_abstractions import (
-    to_vhdl_binary_string,
 )
 
 
