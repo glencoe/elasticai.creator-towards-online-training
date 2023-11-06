@@ -8,7 +8,10 @@ from elasticai.creator.file_generation.template import (
 from elasticai.creator.vhdl.auto_wire_protocols.port_definitions import create_port
 from elasticai.creator.vhdl.design.design import Design
 from elasticai.creator.vhdl.design.ports import Port
-from elasticai.creator.vhdl.shared_designs.rom import Rom
+from elasticai.creator.vhdl.shared_designs.rom import (
+    RomWithUnsignedAddressAndSignedData as Rom,
+)
+
 from .testbench import Conv1dDesign as Conv1dDesignProtocol
 
 
@@ -64,7 +67,6 @@ class Conv1d(Design, Conv1dDesignProtocol):
     def kernel_size(self) -> int:
         return self._kernel_size
 
-
     @property
     def port(self) -> Port:
         return self._port
@@ -89,7 +91,8 @@ class Conv1d(Design, Conv1dDesignProtocol):
                 kernel_size=str(self.kernel_size),
                 vector_width=str(self.input_signal_length),
                 name=self.name,
-            ) | generate_parameters_from_port(self._port),
+            )
+            | generate_parameters_from_port(self._port),
         )
         destination.create_subpath(self.name).as_file(".vhd").write(template)
 
@@ -98,7 +101,9 @@ class Conv1d(Design, Conv1dDesignProtocol):
             file_name="conv1d.vhd",
             parameters={},
         )
-        destination.create_subpath("conv1d_fxp_MAC_RoundToZero").as_file(".vhd").write(core_component)
+        destination.create_subpath("conv1d_fxp_MAC_RoundToZero").as_file(".vhd").write(
+            core_component
+        )
 
         mac = InProjectTemplate(
             package="elasticai.creator.nn.fixed_point.mac",
@@ -111,13 +116,12 @@ class Conv1d(Design, Conv1dDesignProtocol):
             name=rom_name["weights"],
             data_width=self._total_bits,
             values_as_integers=self._flatten_params(self._weights),
-
         )
-        weights_rom.save_to(destination.create_subpath(rom_name["weights"]), std_logic_vector=False)
+        weights_rom.save_to(destination.create_subpath(rom_name["weights"]))
 
         bias_rom = Rom(
             name=rom_name["bias"],
             data_width=self._total_bits,
             values_as_integers=self._bias,
         )
-        bias_rom.save_to(destination.create_subpath(rom_name["bias"]), std_logic_vector=False)
+        bias_rom.save_to(destination.create_subpath(rom_name["bias"]))

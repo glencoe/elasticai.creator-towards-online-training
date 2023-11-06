@@ -1,3 +1,5 @@
 class Rom:
-    def _int_to_bit_pattern(self, number: int, total_bits: int) -> str:
-        ...
+    def __init__(self, name: str, data_width: int,
+                 values: list[int]) -> None:
+        self._name = name
+        self._data_width = data_width
