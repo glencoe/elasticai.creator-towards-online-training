@@ -90,7 +90,8 @@ class Conv1dTestbench:
         for line in map(str.strip, content):
             if line.startswith("result: "):
                 batch_text = line.split(":")[1].split(",")[0][1:]
-                output_text = line.split(":")[1].split(",")[1][1:]
+                output_text = line.split(":")[1].split(",")[1][0:]
+                print("output_text: ", output_text)
                 batch = int(self._converter_for_batch.bits_to_rational(batch_text))
                 if "U" not in line.split(":")[1].split(",")[1][1:]:
                     output = self._converter.bits_to_rational(output_text)
