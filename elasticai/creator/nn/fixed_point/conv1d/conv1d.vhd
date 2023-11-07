@@ -2,6 +2,9 @@ library ieee;
 
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use IEEE.math_real.ceil;
+use IEEE.math_real.floor;
+use IEEE.math_real.log2;
 
 entity conv1d_fxp_MAC_RoundToZero is
     generic (
@@ -27,6 +30,17 @@ entity conv1d_fxp_MAC_RoundToZero is
 end;
 
 architecture rtl of conv1d_fxp_MAC_RoundToZero is
+    function ceil_log2(value : in natural) return integer is
+    variable result : integer;
+    begin
+    if value = 1 then
+        return 1;
+    else
+        result := integer(ceil(log2(real(value))));
+        return result;
+    end if;
+    end function;
+
     constant FXP_ONE : signed(TOTAL_WIDTH-1 downto 0) := to_signed(2**FRAC_WIDTH,TOTAL_WIDTH);
 
     signal mac_reset : std_logic;
@@ -41,8 +55,8 @@ architecture rtl of conv1d_fxp_MAC_RoundToZero is
     signal n_clock : std_logic;
     signal w : signed(TOTAL_WIDTH-1 downto 0);
     signal b : signed(TOTAL_WIDTH-1 downto 0);
-    signal w_address : unsigned(0 downto 0); -- too big round(log2())
-    signal b_address : unsigned(0 downto 0); -- too big round(log2())
+    signal w_address : unsigned(ceil_log2(OUT_CHANNELS*IN_CHANNELS*KERNEL_SIZE)-1 downto 0);
+    signal b_address : unsigned(ceil_log2(OUT_CHANNELS)-1 downto 0);
 
     type t_state is (s_reset, s_data_transfer_MAC, s_MAC_mul_x_w, s_MAC_add_b, s_MAC_get_result, s_reset_mac, s_done);
     signal state : t_state;
@@ -67,10 +81,10 @@ begin
         );
 
     main : process (clock)
-        variable kernel_counter : unsigned(0+1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
-        variable input_counter : unsigned(1+1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
-        variable input_channel_counter : unsigned(0+1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
-        variable output_channel_counter : unsigned(0+1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
+        variable kernel_counter : unsigned(ceil_log2(KERNEL_SIZE+1) downto 0); -- too big integer(round(log2(var-1)) downto 0)
+        variable input_counter : unsigned(ceil_log2(VECTOR_WIDTH+1) downto 0); -- too big integer(round(log2(var-1)) downto 0)
+        variable input_channel_counter : unsigned(ceil_log2(IN_CHANNELS+1) downto 0); -- too big integer(round(log2(var-1)) downto 0)
+        variable output_channel_counter : unsigned(ceil_log2(OUT_CHANNELS+1) downto 0); -- too big integer(round(log2(var-1)) downto 0)
         variable bias_added : std_logic;
     begin
         if reset = '1' then
