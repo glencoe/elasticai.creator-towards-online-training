@@ -17,7 +17,7 @@ architecture rtl of ${testbench_name} is
     signal clock_period : time := 2 ns;
 
     --DATA INPUT
-    type data is array (0 to ${input_signal_length}-1) of signed(${total_bits}-1 downto 0);
+    type data is array (0 to ${input_signal_length}*${in_channels}-1) of signed(${total_bits}-1 downto 0);
     signal data_in : data;
     file input_file : text open read_mode is INPUTS_FILE_PATH;
 
@@ -38,9 +38,9 @@ begin
     x_writing : process (clock)
     begin
         if falling_edge(clock) then
-            -- After the layer in at idle mode, y is readable
-            -- but it only update at the rising edge of the clock
-            --report("debug: conv1d: y_read "  & to_bstring(y_ram(0)));
+            -- After the layer in at idle mode, x is readable
+            -- but it only update at the falling edge of the clock
+            --report("debug: testbench: x_address "  & to_bstring(x_address));
             x <= data_in(to_integer(x_address));
         end if;
     end process x_writing;
@@ -57,7 +57,7 @@ begin
         variable v_ILINE     : line;
         variable v_in : signed(${total_bits}-1 downto 0);
         variable v_SPACE     : character;
-        variable input_idx : integer range 0 to ${input_signal_length} := 0;
+        variable input_idx : integer range 0 to ${input_signal_length}*${in_channels} := 0;
         type TYPE_STATE is (s_start_up, s_load_batch, s_reset, s_start_computation, s_wait_for_computation_done, s_write_uut_output_address, s_read_uut_output, s_finish_simulation);
         variable test_state : TYPE_STATE := s_start_up;
         variable input_cycles : signed(7 downto 0) := (others => '0'); --max for 255 lines of inputs
@@ -69,7 +69,7 @@ begin
                 readline(input_file, v_ILINE); -- read header
                 test_state := s_load_batch;
             elsif test_state = s_load_batch then
-                if endfile(input_file) and input_idx = ${input_signal_length} then
+                if endfile(input_file) and input_idx = ${input_signal_length}*${in_channels} then
                     test_state := s_finish_simulation;
                 else
                     if input_idx = 0 then
@@ -79,7 +79,7 @@ begin
                     read(v_ILINE, v_in); -- read value
                     data_in(input_idx) <= v_in;
                     report("status: reading " & to_bstring(v_in));
-                    if input_idx /= ${input_signal_length}-1 then
+                    if input_idx /= ${input_signal_length}*${in_channels}-1 then
                         read(v_ILINE, v_SPACE);
                     else
                         report "status: data for batch loaded!";
@@ -113,7 +113,7 @@ begin
                 report("status: test_state = s_read_uut_output");
                 report("status: " & to_bstring(input_cycles) & "," & to_bstring(y));
                 report("result: " & to_bstring(input_cycles) & "," & to_bstring(y));
-                if y_address /= ${output_signal_length}-1 then
+                if y_address /= ${output_signal_length}*${out_channels}-1 then
                     test_state := s_write_uut_output_address;
                 else
                     input_cycles := input_cycles + 1;
@@ -131,7 +131,7 @@ begin
     variable i : integer range 0 to 10000;
     begin
         if rising_edge(clock) then
-            if i = 100 then
+            if i = 200 then
                 report("OUT of TIME");
                 finish;
             else
