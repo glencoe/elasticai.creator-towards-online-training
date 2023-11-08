@@ -33,6 +33,15 @@ class Conv1dDesign(Protocol):
     @abstractmethod
     def kernel_size(self) -> int:
         ...
+    @property
+    @abstractmethod
+    def in_channels(self) -> int:
+        ...
+
+    @property
+    @abstractmethod
+    def out_channels(self) -> int:
+        ...
 
 
 class Conv1dTestbench:
@@ -42,6 +51,8 @@ class Conv1dTestbench:
         self._name = name
         self._uut_name = uut.name
         self._input_signal_length = uut.input_signal_length
+        self._in_channels = uut.in_channels
+        self._out_channels = uut.out_channels
         self._x_address_width = uut.port["x_address"].width
         self._fxp_params = fxp_params
         self._converter = NumberConverter(self._fxp_params)
@@ -58,6 +69,8 @@ class Conv1dTestbench:
             parameters={
                 "testbench_name": self.name,
                 "input_signal_length": str(self._input_signal_length),
+                "in_channels": str(self._in_channels),
+                "out_channels": str(self._out_channels),
                 "total_bits": str(self._fxp_params.total_bits),
                 "x_address_width": str(self._x_address_width),
                 "output_signal_length": str(self._output_signal_length),

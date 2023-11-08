@@ -71,6 +71,14 @@ class Conv1d(Design, Conv1dDesignProtocol):
     def port(self) -> Port:
         return self._port
 
+    @property
+    def in_channels(self) -> int:
+        return self._in_channels
+
+    @property
+    def out_channels(self) -> int:
+        return self._out_channels
+
     @staticmethod
     def _flatten_params(params: list[list[list[int]]]) -> list[int]:
         result = []

@@ -67,7 +67,7 @@ begin
 
     conv1d_fxp_MAC : entity work.fxp_MAC_RoundToZero
         generic map(
-            VECTOR_WIDTH => KERNEL_SIZE*IN_CHANNELS,
+            VECTOR_WIDTH => KERNEL_SIZE*IN_CHANNELS+1, -- +1 need for Bias
             TOTAL_WIDTH => TOTAL_WIDTH,
             FRAC_WIDTH => FRAC_WIDTH
         )
@@ -154,11 +154,12 @@ begin
                     state <= s_data_transfer_MAC;
                 elsif state = s_MAC_get_result then
                     report("debug: conv1d: state = s_MAC_get_result");
-                    next_sample <= '1';
+                    --next_sample <= '1';
                     if mac_done = '1' then
                         report("debug: conv1d: mac: done");
-                        next_sample <= '0';
+                        --next_sample <= '0';
                         report("debug: conv1d: write sum to y_ram");
+                        report("debug: conv1d: sum=" & to_bstring(sum));
                         y_ram(to_integer(resize((output_channel_counter-1)*(VECTOR_WIDTH-KERNEL_SIZE+1)+input_counter, y_ram'length))) <= sum;
                         state <= s_reset_MAC;
                     end if;

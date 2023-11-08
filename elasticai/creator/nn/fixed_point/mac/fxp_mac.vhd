@@ -7,7 +7,7 @@ entity fxp_MAC_RoundToZero is
         VECTOR_WIDTH : integer;
         TOTAL_WIDTH : integer;
         FRAC_WIDTH : integer;
-        ACCUMULATOR_FACTOR: integer := 4
+        ACCUMULATOR_FACTOR: integer := 2
     );
     port (
         reset : in std_logic;
@@ -61,23 +61,23 @@ begin
             sum <= (others => '0');
             report("debug: MAC: reset");
         else
-            report("debug: MAC: accumulator pre-computation" & to_bstring(accumulator));
+            --report("debug: MAC: accumulator pre-computation" & to_bstring(accumulator));
+
             if rising_edge(next_sample) then
                 if state=s_compute then
-                    report("debug: MAC: state=s_compute");
+                    --report("debug: MAC: state=s_compute");
                     report("debug: MAC: x1    x2");
                     report("debug: MAC: " & to_bstring(x1) & " " & to_bstring(x2));
                     accumulator := resize(x1*x2 + accumulator, accumulator'length);
+                    report("debug: MAC: accumulator post-computation " & to_bstring(accumulator));
                     vector_idx := vector_idx + 1;
                     if vector_idx = VECTOR_WIDTH then
                        report("debug: MAC: cutdown");
                        sum <= cut_down(accumulator);
+                       report("debug: MAC: accumulator post-computation " & to_bstring(accumulator));
                        state := s_finished;
+                       done <= '1';
                     end if;
-                elsif state = s_finished then
-                    report("debug: MAC: sum " & to_bstring(sum));
-                    report("debug: MAC: state=done");
-                    done <= '1';
                 end if;
             end if;
         end if;
