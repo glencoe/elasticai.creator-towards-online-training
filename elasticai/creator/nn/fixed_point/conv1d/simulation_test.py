@@ -48,11 +48,14 @@ class SimulatedLayer:
             print()
             print(inputs)
             header = [x for x in inputs[0].keys()]
-            f.write(" ".join(header) + "\n")
-            for i, row in enumerate(inputs):
-                for key, value in row.items():
-                    f.write(value + " ")
-                f.write("\n")
+            writer = csv.DictWriter(
+                f,
+                fieldnames=header,
+                lineterminator="\n",
+                delimiter=" ",
+            )
+            writer.writeheader()
+            writer.writerows(inputs)
 
 
 def create_ones_conv1d_input_list(
