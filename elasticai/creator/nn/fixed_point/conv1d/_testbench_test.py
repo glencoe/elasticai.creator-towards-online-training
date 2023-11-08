@@ -1,12 +1,13 @@
-from typing import Callable, Any
+from typing import Any, Callable
 
 import pytest
 import torch
 
 from elasticai.creator.vhdl.auto_wire_protocols.port_definitions import create_port
 from elasticai.creator.vhdl.design.ports import Port
-from .testbench import Conv1dTestbench, Conv1dDesign
+
 from ..number_converter import FXPParams, NumberConverter
+from .testbench import Conv1dDesign, Conv1dTestbench
 
 
 class DummyConv1d:
@@ -14,6 +15,8 @@ class DummyConv1d:
         self.name: str = "conv1d"
         self.kernel_size: int = 1
         self.input_signal_length = 1
+        self.in_channels = 1
+        self.out_channels = 1
         self.port: Port = create_port(
             y_width=fxp_params.total_bits,
             x_width=fxp_params.total_bits,
@@ -24,7 +27,9 @@ class DummyConv1d:
 
 def parameters_for_reported_content_parsing():
     def add_expected_prefix_to_pairs(pairs):
-        _converter_for_batch = NumberConverter(FXPParams(8, 0))  # max for 255 lines of inputs
+        _converter_for_batch = NumberConverter(
+            FXPParams(8, 0)
+        )  # max for 255 lines of inputs
         pairs_with_prefix = list()
         for i, (batch_text, batch_number) in enumerate(pairs):
             pairs_with_prefix.append(list())
@@ -32,7 +37,10 @@ def parameters_for_reported_content_parsing():
             pairs_with_prefix[i].append(batch_number)
             for i2, inputs_text in enumerate(batch_text):
                 for value_text in inputs_text:
-                    pairs_with_prefix[i][0].append(f"result: {_converter_for_batch.integer_to_bits(i2)}, {value_text}")
+                    pairs_with_prefix[i][0].append(
+                        f"result: {_converter_for_batch.integer_to_bits(i2)},"
+                        f" {value_text}"
+                    )
         return pairs_with_prefix
 
     def combine_pairs_with_fxp_params(fxp_params, input_expected_pairs):
@@ -50,8 +58,10 @@ def parameters_for_reported_content_parsing():
         ],
     ) + combine_pairs_with_fxp_params(
         fxp_params=FXPParams(total_bits=4, frac_bits=1),
-        input_expected_pairs=[([["0001", "1111"]], [[0.5, -0.5]]),
-                              ([["0001", "0011"], ["1000", "1111"]], [[0.5, 1.5], [-4.0, -0.5]])],
+        input_expected_pairs=[
+            ([["0001", "1111"]], [[0.5, -0.5]]),
+            ([["0001", "0011"], ["1000", "1111"]], [[0.5, 1.5], [-4.0, -0.5]]),
+        ],
     )
 
 
