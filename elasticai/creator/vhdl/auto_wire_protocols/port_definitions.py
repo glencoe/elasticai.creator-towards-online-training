@@ -8,6 +8,10 @@ from elasticai.creator.vhdl.design import std_signals as _signals
 from elasticai.creator.vhdl.design.ports import Port
 
 
+def create_null_port() -> Port:
+    return Port(incoming=[], outgoing=[])
+
+
 def create_port(
     x_width: int,
     y_width: int,
