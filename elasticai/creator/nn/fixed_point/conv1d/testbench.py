@@ -97,7 +97,20 @@ class Conv1dTestbench:
 
         return prepared_inputs
 
-    def parse_reported_content(self, content: list[str]) -> list[list[float]]:
+    def parse_reported_content(self, content: list[str]) -> list[list[list[float]]]:
+        def split_list(a_list):
+            print("len(a_list): ", len(a_list))
+            print("self._out_channels: ", self._out_channels)
+            out_channel_length = len(a_list) // self._out_channels
+            new_list = list()
+            out_channel_counter = -1  # start with -1 because it will be increased in first iteration of loop
+            for i, value in enumerate(a_list):
+                if i % out_channel_length == 0:
+                    new_list.append(list())
+                    out_channel_counter += 1
+                new_list[out_channel_counter].append(value)
+            return new_list
+
         results_dict = defaultdict(list)
         print()
         for line in map(str.strip, content):
@@ -115,7 +128,8 @@ class Conv1dTestbench:
                 print(line)
         results = list()
         for x in results_dict.items():
-            results.append(x[1])
+            results.append(split_list(x[1]))
+        print("results: ", results)
         if len(results) is 0:
             raise Exception(content)
         return list(results)
