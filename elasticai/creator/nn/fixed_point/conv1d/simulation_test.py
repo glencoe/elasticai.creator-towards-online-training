@@ -120,5 +120,4 @@ def test_verify_hw_sw_equivalence_4_inputs(x):
     testbench.save_to(build_dir.create_subpath("testbenches"))
     sim_layer = SimulatedLayer(testbench, GHDLSimulator, working_dir="build")
     sim_output = sim_layer(input_data)
-    print(sw_output)
     assert sw_output.tolist() == sim_output
