@@ -1,0 +1,52 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;               -- for type conversions
+
+entity ${name} is
+    port (
+        enable : in std_logic;
+        clock  : in std_logic;
+        x_address : out std_logic_vector(${x_address_width}-1 downto 0);
+        y_address : in std_logic_vector(${y_address_width}-1 downto 0);
+
+        x   : in std_logic_vector(${x_width}-1 downto 0);
+        y  : out std_logic_vector(${y_width}-1 downto 0);
+
+        done   : out std_logic
+    );
+end;
+
+architecture rtl of ${name} is
+    signal x_address_unsigned : unsigned (${x_address_width}-1 downto 0);
+    signal y_address_unsigned : unsigned (${y_address_width}-1 downto 0);
+    signal x_signed : signed (${x_width}-1 downto 0);
+    signal y_signed : signed (${y_width}-1 downto 0);
+
+begin
+    x_address <= std_logic_vector(x_address_unsigned);
+    y_address_unsigned <=  unsigned(y_address);
+    x_signed <= signed(x);
+    y <= std_logic_vector(y_signed);
+
+    ${name}_conv1d : entity work.conv1d_fxp_MAC_RoundToZero
+        generic map(
+            TOTAL_WIDTH => TOTAL_WIDTH,
+            FRAC_WIDTH => FRAC_WIDTH,
+            VECTOR_WIDTH => VECTOR_WIDTH,
+            KERNEL_SIZE => KERNEL_SIZE,
+            IN_CHANNELS => IN_CHANNELS,
+            OUT_CHANNELS => OUT_CHANNELS,
+            X_ADDRESS_WIDTH => X_ADDRESS_WIDTH,
+            Y_ADDRESS_WIDTH => Y_ADDRESS_WIDTH
+        )
+        port map (
+            clock => clock,
+            enable => enable,
+            reset => reset,
+            x => x_signed,
+            x_address => x_address_unsigned,
+            y => y_signed,
+            y_address => y_address_unsigned,
+            done => done
+        );
+end rtl;
