@@ -49,7 +49,7 @@ architecture rtl of conv1d_fxp_MAC_RoundToZero is
     signal x2 : signed(TOTAL_WIDTH-1 downto 0);
     signal sum : signed(TOTAL_WIDTH-1 downto 0);
     signal mac_done : std_logic;
-    type data is array (0 to OUT_CHANNELS*(VECTOR_WIDTH-KERNEL_SIZE+1)*KERNEL_SIZE-1) of signed(TOTAL_WIDTH-1 downto 0);
+    type data is array (0 to OUT_CHANNELS*(VECTOR_WIDTH-KERNEL_SIZE+1)-1) of signed(TOTAL_WIDTH-1 downto 0);
     signal y_ram : data;
 
     signal n_clock : std_logic;
