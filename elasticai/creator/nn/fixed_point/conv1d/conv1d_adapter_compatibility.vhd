@@ -17,6 +17,16 @@ entity ${name} is
 end;
 
 architecture rtl of ${name} is
+    constant TOTAL_WIDTH : natural := ${x_width};
+    constant FRAC_WIDTH : natural := ${frac_width};
+    constant VECTOR_WIDTH : natural := ${vector_width};
+    constant KERNEL_SIZE : natural := ${kernel_size};
+    constant IN_CHANNELS : natural := ${in_channels};
+    constant OUT_CHANNELS : natural := ${out_channels};
+    constant X_ADDRESS_WIDTH : natural := ${x_address_width};
+    constant Y_ADDRESS_WIDTH : natural := ${y_address_width};
+
+
     signal x_address_unsigned : unsigned (${x_address_width}-1 downto 0);
     signal y_address_unsigned : unsigned (${y_address_width}-1 downto 0);
     signal x_signed : signed (${x_width}-1 downto 0);
