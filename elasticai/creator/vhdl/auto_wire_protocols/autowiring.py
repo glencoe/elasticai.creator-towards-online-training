@@ -27,6 +27,10 @@ class DataFlowNode:
         )
 
     @classmethod
+    def null(cls, name: str) -> "DataFlowNode":
+        return cls(name=name, sinks=tuple(), sources=tuple())
+
+    @classmethod
     def unbuffered(cls, name: str) -> "DataFlowNode":
         return cls(name=name, sinks=("clock", "x", "enable"), sources=("y",))
 
@@ -38,8 +42,9 @@ class WiringProtocol:
     We understand the neural network as a DAG. The direction "down" refers to the direction
     of the dataflow during inference. A "sink" refers to an "in" signal in vhdl and a source
     refers to an "out" signal. Each field of the class holds a dictionary specifying compatible
-    source names for sinks. For "up_sinks" we search in ancestor nodes for satisfying sources
+    source names for sinks. For "up_sinks" we search in ancestor nodes for satisfying source signals
     and for "down_sinks" we search in successor nodes.
+    Typically, "down_sinks" are only used for control flow purposes.
     """
 
     up_sinks: dict[str, tuple[str, ...]]
