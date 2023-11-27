@@ -2,6 +2,9 @@ library ieee;
 
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use IEEE.math_real.ceil;
+use IEEE.math_real.floor;
+use IEEE.math_real.log2;
 
 entity conv1d_fxp_MAC_RoundToZero is
     generic (
@@ -27,6 +30,17 @@ entity conv1d_fxp_MAC_RoundToZero is
 end;
 
 architecture rtl of conv1d_fxp_MAC_RoundToZero is
+    function ceil_log2(value : in natural) return integer is
+    variable result : integer;
+    begin
+    if value = 1 then
+        return 1;
+    else
+        result := integer(ceil(log2(real(value))));
+        return result;
+    end if;
+    end function;
+
     constant FXP_ONE : signed(TOTAL_WIDTH-1 downto 0) := to_signed(2**FRAC_WIDTH,TOTAL_WIDTH);
 
     signal mac_reset : std_logic;
@@ -41,10 +55,10 @@ architecture rtl of conv1d_fxp_MAC_RoundToZero is
     signal n_clock : std_logic;
     signal w : signed(TOTAL_WIDTH-1 downto 0);
     signal b : signed(TOTAL_WIDTH-1 downto 0);
-    signal w_address : unsigned(OUT_CHANNELS*IN_CHANNELS*KERNEL_SIZE-1 downto 0); -- too big round(log2())
-    signal b_address : unsigned(OUT_CHANNELS*IN_CHANNELS-1 downto 0); -- too big round(log2())
+    signal w_address : unsigned(ceil_log2(OUT_CHANNELS*IN_CHANNELS*KERNEL_SIZE)-1 downto 0);
+    signal b_address : unsigned(ceil_log2(OUT_CHANNELS)-1 downto 0);
 
-    type t_state is (s_reset, s_data_transfer_MAC, s_MAC_compute, s_reset_mac, s_done);
+    type t_state is (s_reset, s_data_transfer_MAC, s_MAC_mul_x_w, s_MAC_add_b, s_MAC_get_result, s_reset_mac, s_done);
     signal state : t_state;
 begin
     -- connecting signals to ports
@@ -53,7 +67,7 @@ begin
 
     conv1d_fxp_MAC : entity work.fxp_MAC_RoundToZero
         generic map(
-            VECTOR_WIDTH => VECTOR_WIDTH,
+            VECTOR_WIDTH => KERNEL_SIZE*IN_CHANNELS+1, -- +1 need for Bias
             TOTAL_WIDTH => TOTAL_WIDTH,
             FRAC_WIDTH => FRAC_WIDTH
         )
@@ -63,14 +77,14 @@ begin
             x1 => x1,
             x2 => x2,
             sum => sum,
-            done => done
+            done => mac_done
         );
 
     main : process (clock)
-        variable kernel_counter : unsigned(KERNEL_SIZE-1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
-        variable input_counter : unsigned(VECTOR_WIDTH-1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
-        variable input_channel_counter : unsigned(IN_CHANNELS-1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
-        variable output_channel_counter : unsigned(OUT_CHANNELS-1 downto 0); -- too big integer(round(log2(var-1)) downto 0)
+        variable kernel_counter : unsigned(ceil_log2(KERNEL_SIZE+1) downto 0); -- too big integer(round(log2(var-1)) downto 0)
+        variable input_counter : unsigned(ceil_log2(VECTOR_WIDTH+1) downto 0); -- too big integer(round(log2(var-1)) downto 0)
+        variable input_channel_counter : unsigned(ceil_log2(IN_CHANNELS+1) downto 0); -- too big integer(round(log2(var-1)) downto 0)
+        variable output_channel_counter : unsigned(ceil_log2(OUT_CHANNELS+1) downto 0); -- too big integer(round(log2(var-1)) downto 0)
         variable bias_added : std_logic;
     begin
         if reset = '1' then
@@ -88,67 +102,103 @@ begin
             mac_reset <= '1';
             state <= s_reset;
         else
-            if enable = '1' AND state = s_reset then
-                mac_reset <= '0';
-                -- start first MAC_Computation
-                next_sample <= '1';
-                state <= s_data_transfer_MAC;
-            elsif enable = '1' AND state = s_data_transfer_MAC then
-                mac_reset <= '0';
-                if kernel_counter /= KERNEL_SIZE-1 then
-                    --write MAC input for next cycle
-                    x_address <= input_channel_counter * VECTOR_WIDTH + kernel_counter + input_counter;
-                    w_address <= input_channel_counter * VECTOR_WIDTH + kernel_counter;
-                    x1 <= x;
-                    x2 <= w;
-
-                    state <= s_MAC_compute;
-                    kernel_counter := kernel_counter + 1;
-                elsif input_channel_counter /= IN_CHANNELS-1 then
-                    kernel_counter := (others => '0');
-                    input_channel_counter := input_channel_counter + 1;
-                elsif output_channel_counter /= OUT_CHANNELS-1 then
-                    if bias_added = '0' then
-                        b_address <= output_channel_counter;
-                        x1 <= FXP_ONE;
-                        x2 <= b;
-                        bias_added := '1';
-                        state <= s_MAC_compute;
+            if rising_edge(clock) then
+                if enable = '1' AND state = s_reset then
+                    report("debug: conv1d: state = s_reset");
+                    mac_reset <= '0';
+                    -- start first MAC_Computation
+                    --next_sample <= '1';
+                    state <= s_data_transfer_MAC;
+                elsif enable = '1' AND state = s_data_transfer_MAC then
+                    report("debug: conv1d: state = s_data_transfer_MAC");
+                    mac_reset <= '0';
+                    next_sample <= '0';
+                    if input_counter /= VECTOR_WIDTH-KERNEL_SIZE+1 then
+                        if output_channel_counter /= OUT_CHANNELS then
+                            if input_channel_counter /= IN_CHANNELS then
+                                if kernel_counter /= KERNEL_SIZE then
+                                    report("debug: conv1d: Input   output_c    input_c     kernel");
+                                    report("debug: conv1d: " & to_bstring(input_counter) &"     "& to_bstring(output_channel_counter) &"          " & to_bstring(input_channel_counter)  & "          " & to_bstring(kernel_counter));
+                                    x_address <= resize(input_channel_counter * VECTOR_WIDTH + kernel_counter + input_counter, x_address'length);
+                                    w_address <= resize(input_channel_counter * VECTOR_WIDTH + kernel_counter, w_address'length);
+                                    state <= s_MAC_mul_x_w;
+                                    kernel_counter := kernel_counter + 1;
+                                else
+                                    kernel_counter := (others => '0');
+                                    input_channel_counter := input_channel_counter + 1;
+                                end if;
+                            elsif bias_added = '0' then
+                                report("debug: conv1d: add bias");
+                                bias_added := '1';
+                                state <= s_MAC_add_b;
+                            elsif bias_added = '1' then
+                                --read MAC output from last computation and write to y_ram
+                                bias_added := '0';
+                                state <= s_MAC_get_result;
+                                kernel_counter := (others => '0');
+                                input_channel_counter := (others => '0');
+                                output_channel_counter := output_channel_counter + 1;
+                            end if;
+                        else
+                            kernel_counter := (others => '0');
+                            input_channel_counter := (others => '0');
+                            output_channel_counter := (others => '0');
+                            input_counter := input_counter + 1;
+                        end if;
                     else
-                        --read MAC output from last computation and write to y_ram
-                        y_ram(to_integer(output_channel_counter*(VECTOR_WIDTH-KERNEL_SIZE+1)+input_counter+kernel_counter)) <= sum;
-                        bias_added := '0';
-                        input_channel_counter := (others => '0');
-                        output_channel_counter := output_channel_counter + 1;
+                        state <= s_done;
+                    end if;
+                elsif state = s_MAC_mul_x_w or state = s_MAC_add_b then
+                    report("debug: conv1d: state = mul_x or add_b" );
+                    next_sample <= '1';
+                    state <= s_data_transfer_MAC;
+                elsif state = s_MAC_get_result then
+                    report("debug: conv1d: state = s_MAC_get_result");
+                    --next_sample <= '1';
+                    if mac_done = '1' then
+                        report("debug: conv1d: mac: done");
+                        --next_sample <= '0';
+                        report("debug: conv1d: write sum to y_ram");
+                        report("debug: conv1d: sum=" & to_bstring(sum));
+                        y_ram(to_integer(resize((output_channel_counter-1)*(VECTOR_WIDTH-KERNEL_SIZE+1)+input_counter, y_ram'length))) <= sum;
                         state <= s_reset_MAC;
                     end if;
-                elsif input_counter /= VECTOR_WIDTH-KERNEL_SIZE-1 then
-                    output_channel_counter := (others => '0');
-                    input_counter := input_counter + 1;
-                else
-                    state <= s_done;
+                elsif state = s_done then
+                    --report("debug: conv1d: state = s_done");
+                    done <= '1';
+                elsif state = s_reset_MAC then
+                    report("debug: conv1d: state = s_reset_MAC");
+                    mac_reset <= '1';
+                    state <= s_data_transfer_MAC;
                 end if;
-            elsif state = s_MAC_compute then
-                next_sample <= '0';
-                state <= s_data_transfer_MAC;
-            elsif state = s_reset_MAC then
-                mac_reset <= '1';
-                state <= s_data_transfer_MAC;
             end if;
         end if;
     end process main;
 
     y_writing : process (clock, state)
     begin
-        if state=s_done then
+        if state = s_done then
             if falling_edge(clock) then
                 -- After the layer in at idle mode, y is readable
-                -- but it only update at the rising edge of the clock
+                -- but it only update at the falling edge of the clock
                 y <= y_ram(to_integer(unsigned(y_address)));
             end if;
         end if;
     end process y_writing;
-
+    
+    write_MAC_inputs : process (clock, state)
+    begin
+        if rising_edge(clock) then
+            if state = s_MAC_mul_x_w then
+                x1 <= x;
+                x2 <= w;
+            elsif state = s_MAC_add_b then
+                x1 <= FXP_ONE;
+                x2 <= b;
+            end if;
+        end if;
+    end process write_MAC_inputs;
+    
     -- Weights
     rom_w : entity work.conv1d_w_rom(rtl)
     port map  (

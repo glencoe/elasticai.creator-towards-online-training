@@ -33,6 +33,15 @@ class Conv1dDesign(Protocol):
     @abstractmethod
     def kernel_size(self) -> int:
         ...
+    @property
+    @abstractmethod
+    def in_channels(self) -> int:
+        ...
+
+    @property
+    @abstractmethod
+    def out_channels(self) -> int:
+        ...
 
 
 class Conv1dTestbench:
@@ -42,6 +51,8 @@ class Conv1dTestbench:
         self._name = name
         self._uut_name = uut.name
         self._input_signal_length = uut.input_signal_length
+        self._in_channels = uut.in_channels
+        self._out_channels = uut.out_channels
         self._x_address_width = uut.port["x_address"].width
         self._fxp_params = fxp_params
         self._converter = NumberConverter(self._fxp_params)
@@ -58,6 +69,8 @@ class Conv1dTestbench:
             parameters={
                 "testbench_name": self.name,
                 "input_signal_length": str(self._input_signal_length),
+                "in_channels": str(self._in_channels),
+                "out_channels": str(self._out_channels),
                 "total_bits": str(self._fxp_params.total_bits),
                 "x_address_width": str(self._x_address_width),
                 "output_signal_length": str(self._output_signal_length),
@@ -84,16 +97,39 @@ class Conv1dTestbench:
 
         return prepared_inputs
 
-    def parse_reported_content(self, content: list[str]) -> list[list[float]]:
+    def parse_reported_content(self, content: list[str]) -> list[list[list[float]]]:
+        def split_list(a_list):
+            print("len(a_list): ", len(a_list))
+            print("self._out_channels: ", self._out_channels)
+            out_channel_length = len(a_list) // self._out_channels
+            new_list = list()
+            out_channel_counter = -1  # start with -1 because it will be increased in first iteration of loop
+            for i, value in enumerate(a_list):
+                if i % out_channel_length == 0:
+                    new_list.append(list())
+                    out_channel_counter += 1
+                new_list[out_channel_counter].append(value)
+            return new_list
+
         results_dict = defaultdict(list)
+        print()
         for line in map(str.strip, content):
             if line.startswith("result: "):
-                batch = int(self._converter_for_batch.bits_to_rational(line.split(":")[1].split(",")[0][1:]))
-                output = self._converter.bits_to_rational(line.split(":")[1].split(",")[1][1:])
+                batch_text = line.split(":")[1].split(",")[0][1:]
+                output_text = line.split(":")[1].split(",")[1][0:]
+                print("output_text: ", output_text)
+                batch = int(self._converter_for_batch.bits_to_rational(batch_text))
+                if "U" not in line.split(":")[1].split(",")[1][1:]:
+                    output = self._converter.bits_to_rational(output_text)
+                else:
+                    output = output_text
                 results_dict[batch].append(output)
+            else:
+                print(line)
         results = list()
         for x in results_dict.items():
-            results.append(x[1])
+            results.append(split_list(x[1]))
+        print("results: ", results)
         if len(results) is 0:
             raise Exception(content)
         return list(results)

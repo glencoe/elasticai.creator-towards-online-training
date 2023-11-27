@@ -6,7 +6,8 @@ entity fxp_MAC_RoundToZero is
     generic (
         VECTOR_WIDTH : integer;
         TOTAL_WIDTH : integer;
-        FRAC_WIDTH : integer
+        FRAC_WIDTH : integer;
+        ACCUMULATOR_FACTOR: integer := 2
     );
     port (
         reset : in std_logic;
@@ -20,7 +21,7 @@ end;
 
 architecture rtl of fxp_Mac_RoundToZero is
 
-    function cut_down(x : in signed(2*TOTAL_WIDTH-1 downto 0)) return signed is
+    function cut_down(x : in signed(ACCUMULATOR_FACTOR*TOTAL_WIDTH-1 downto 0)) return signed is
         variable result : signed(TOTAL_WIDTH-1 downto 0) := (others=>'0');
         constant left_bit : natural := TOTAL_WIDTH-1+FRAC_WIDTH;
         constant right_bit : natural := FRAC_WIDTH;
@@ -46,28 +47,38 @@ architecture rtl of fxp_Mac_RoundToZero is
     end function;
 
 begin
-    mac : process (next_sample)
-        variable accumulator : signed(2*TOTAL_WIDTH-1 downto 0) := (others=>'0');
+    mac : process (next_sample, reset)
+        variable accumulator : signed(ACCUMULATOR_FACTOR*TOTAL_WIDTH-1 downto 0) := (others=>'0');
         variable vector_idx : integer := 0;
         type t_state is (s_compute, s_finished);
         variable state : t_state := s_compute;
     begin
-        if rising_edge(next_sample) then
-            if reset = '0' then
-                accumulator := (others => '0');
-                vector_idx := 0;
-                state := s_compute;
-                done <= '0';
-                sum <= (others => '0');
-            elsif state=s_compute then
-                accumulator := x1*x2 + accumulator;
-                vector_idx := vector_idx + 1;
-                if vector_idx = VECTOR_WIDTH then
-                   sum <= cut_down(accumulator);
-                   state := s_finished;
+        if reset = '1' then
+            accumulator := (others => '0');
+            vector_idx := 0;
+            state := s_compute;
+            done <= '0';
+            sum <= (others => '0');
+            report("debug: MAC: reset");
+        else
+            --report("debug: MAC: accumulator pre-computation" & to_bstring(accumulator));
+
+            if rising_edge(next_sample) then
+                if state=s_compute then
+                    --report("debug: MAC: state=s_compute");
+                    report("debug: MAC: x1    x2");
+                    report("debug: MAC: " & to_bstring(x1) & " " & to_bstring(x2));
+                    accumulator := resize(x1*x2 + accumulator, accumulator'length);
+                    report("debug: MAC: accumulator post-computation " & to_bstring(accumulator));
+                    vector_idx := vector_idx + 1;
+                    if vector_idx = VECTOR_WIDTH then
+                       report("debug: MAC: cutdown");
+                       sum <= cut_down(accumulator);
+                       report("debug: MAC: accumulator post-computation " & to_bstring(accumulator));
+                       state := s_finished;
+                       done <= '1';
+                    end if;
                 end if;
-            elsif state = s_finished then
-                done <= '1';
             end if;
         end if;
     end process mac;

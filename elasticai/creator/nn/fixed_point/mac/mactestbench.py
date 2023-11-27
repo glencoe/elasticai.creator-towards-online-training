@@ -17,8 +17,13 @@ class MacTestBench:
     def set_inputs(self, *inputs):
         self._inputs = inputs
 
-    def parse_reported_content(self, outputs: list[str]):
-        return self._converter.bits_to_rational(outputs[0])
+    def parse_reported_content(self, content: list[str]):
+        for line in map(str.strip, content):
+            if line.startswith("result: "):
+                output_text = line.split(":")[1].split(",")[0][1:]
+                return self._converter.bits_to_rational(output_text)
+            else:
+                print(line)
 
     @property
     def _vector_width(self) -> str:
