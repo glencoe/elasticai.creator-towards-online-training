@@ -37,6 +37,82 @@ def test_wire_buffered_entity_to_top_module() -> None:
     assert connections == expected_connections
 
 
+def parse_connection_spec(spec: str) -> dict[tuple[str, str], tuple[str, str]]:
+    connections = spec.split(",")
+    result = {}
+    for c in connections:
+        items = c.split("<-")
+        items = items[0].split(":") + items[1].split(":")
+        items = [i.strip() for i in items]
+        to_entity, to_signal, from_entity, from_signal = items
+        result[(to_entity, to_signal)] = (from_entity, from_signal)
+    return result
+
+
+class TestNullNode:
+    @pytest.fixture
+    def null(self):
+        return DataFlowNode.null("null")
+
+    @pytest.fixture
+    def child(self):
+        return DataFlowNode.buffered("child")
+
+    @pytest.fixture
+    def expected_single_child(self):
+        return parse_connection_spec(
+            """
+    child:x <- top:x,
+    child:y_address <- top:y_address,
+    child:clock <- top:clock,
+    child:enable <- top:enable,
+    top:y <- child:y,
+    top:x_address <- child:x_address,
+    top:done <- child:done"""
+        )
+
+    @pytest.fixture
+    def expected_two_children(self):
+        return parse_connection_spec(
+            """
+    child:x <- top:x,
+    top:x_address <- child:x_address,
+    child:clock <- top:clock,
+    child:enable <- top:enable,
+    child1:enable <- child:done,
+    child1:clock <- top:clock,
+    child1:x <- child:y,
+    child:y_address <- child1:x_address,
+    child1:y_address <- top:y_address,
+    top:y <- child1:y,
+    top:done <- child1:done"""
+        )
+
+    @pytest.fixture
+    def top(self):
+        return DataFlowNode.top("top")
+
+    def test_null_node_in_last_position_is_ignored(
+        self, top, child, null, expected_single_child
+    ) -> None:
+        connections = _wire(top=top, graph=(child, null))
+        assert expected_single_child == connections
+
+    def test_null_node_in_first_position_is_ignored(
+        self, top, child, null, expected_single_child
+    ) -> None:
+        connections = _wire(top=top, graph=(null, child))
+        assert expected_single_child == connections
+
+    def test_null_node_between_two_children_is_ignored(
+        self, top, child, null, expected_two_children
+    ):
+        connections = _wire(
+            top=top, graph=(child, null, DataFlowNode.buffered("child1"))
+        )
+        assert expected_two_children == connections
+
+
 def test_wire_two_buffered_entities() -> None:
     a = DataFlowNode.buffered("a")
     b = DataFlowNode.buffered("b")

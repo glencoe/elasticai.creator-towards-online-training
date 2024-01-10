@@ -102,8 +102,8 @@ begin
                 --report "status: test_state = s_wait_for_computation_done";
                 if done = '1' then
                     report "status: computation finished";
-                    test_state := s_write_uut_output_address;
-                    y_address <= y_address - 1;
+                    test_state := s_read_uut_output;
+                    y_address <= (others => '0');
                 end if;
             elsif test_state = s_write_uut_output_address then
                 report("status: test_state = s_write_uut_output_address");
