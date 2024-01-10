@@ -65,7 +65,7 @@ def create_ones_conv1d_input_list(
 
 
 @pytest.mark.simulation
-@pytest.mark.parametrize("x", ([[[1.0, 1.0, 1.0]]], [[[0.0, 1.0, 1.0]]]))
+@pytest.mark.parametrize("x", ([[[0.0, 1.0, 1.0]]], [[[1.0, 1.0, 1.0]]], [[[2.0, 1.0, 0.0]]]))
 def test_verify_hw_sw_equivalence_3_inputs(x):
     input_data = torch.Tensor(x)
     sw_conv = Conv1d(

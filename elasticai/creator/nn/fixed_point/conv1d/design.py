@@ -88,10 +88,11 @@ class Conv1d(Design, Conv1dDesignProtocol):
         return result
 
     def save_to(self, destination: Path) -> None:
+        print(self.name)
         rom_name = dict(weights=f"{self.name}_w_rom", bias=f"{self.name}_b_rom")
         template = InProjectTemplate(
             package=module_to_package(self.__module__),
-            file_name="conv1d_adapter.tpl.vhd",
+            file_name="conv1d_adapter_compatibility.tpl.vhd",
             parameters=dict(
                 frac_width=str(self._frac_bits),
                 in_channels=str(self._in_channels),

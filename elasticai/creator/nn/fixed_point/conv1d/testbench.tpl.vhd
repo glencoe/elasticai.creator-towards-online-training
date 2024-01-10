@@ -17,23 +17,27 @@ architecture rtl of ${testbench_name} is
     signal clock_period : time := 2 ns;
 
     --DATA INPUT
-    type data is array (0 to ${input_signal_length}*${in_channels}-1) of signed(${total_bits}-1 downto 0);
+    type data is array (0 to ${input_signal_length}*${in_channels}-1) of std_logic_vector(${total_bits}-1 downto 0);
     signal data_in : data;
     file input_file : text open read_mode is INPUTS_FILE_PATH;
 
     --UUT
     signal clock : std_logic := '0';
     signal enable : std_logic := '0';
-    signal reset : std_logic := '1';
-    signal x : signed(${total_bits}-1 downto 0);
-    signal x_address : unsigned(${x_address_width}-1 downto 0);
-    signal y : signed(${total_bits}-1 downto 0);
-    signal y_address : unsigned(${y_address_width}-1 downto 0);
+    signal x : std_logic_vector(${total_bits}-1 downto 0);
+    signal x_address : unsigned(${x_address_width}-1 downto 0) := (others => '0');
+    signal x_address_std : std_logic_vector(${x_address_width}-1 downto 0);
+    signal y : std_logic_vector(${total_bits}-1 downto 0);
+    signal y_address : unsigned(${y_address_width}-1 downto 0) := (others => '0');
+    signal y_address_std : std_logic_vector(${y_address_width}-1 downto 0);
     signal done : std_logic;
 
 begin
+    x_address <= unsigned(x_address_std);
+    y_address_std <= std_logic_vector(y_address);
+
     UUT : entity work.${uut_name}
-    port map (clock => clock, enable => enable, reset => reset, x => x, x_address => x_address, y => y, y_address => y_address, done => done);
+    port map (clock => clock, enable => enable, x => x, x_address => x_address_std, y => y, y_address => y_address_std, done => done);
 
     x_writing : process (clock)
     begin
@@ -41,7 +45,7 @@ begin
             -- After the layer in at idle mode, x is readable
             -- but it only update at the falling edge of the clock
             --report("debug: testbench: x_address "  & to_bstring(x_address));
-            x <= data_in(to_integer(x_address));
+            x <= data_in(to_integer(unsigned(x_address)));
         end if;
     end process x_writing;
 
@@ -55,7 +59,7 @@ begin
 
     start_test : process (clock)
         variable v_ILINE     : line;
-        variable v_in : signed(${total_bits}-1 downto 0);
+        variable v_in : std_logic_vector(${total_bits}-1 downto 0);
         variable v_SPACE     : character;
         variable input_idx : integer range 0 to ${input_signal_length}*${in_channels} := 0;
         type TYPE_STATE is (s_start_up, s_load_batch, s_reset, s_start_computation, s_wait_for_computation_done, s_write_uut_output_address, s_read_uut_output, s_finish_simulation);
@@ -89,13 +93,11 @@ begin
                 end if;
             elsif test_state = s_reset then
                 report "status: test_state = s_reset";
-                reset <= '1';
                 enable <= '0';
                 test_state := s_start_computation;
                 y_address <= (others => '0');
             elsif test_state = s_start_computation then
                 report "status: test_state = s_start_computation";
-                reset <= '0';
                 enable <= '1';
                 test_state := s_wait_for_computation_done;
             elsif test_state = s_wait_for_computation_done then

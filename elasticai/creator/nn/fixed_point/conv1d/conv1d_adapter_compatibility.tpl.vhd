@@ -31,12 +31,14 @@ architecture rtl of ${name} is
     signal y_address_unsigned : unsigned (${y_address_width}-1 downto 0);
     signal x_signed : signed (${x_width}-1 downto 0);
     signal y_signed : signed (${y_width}-1 downto 0);
+    signal reset : std_logic;
 
 begin
     x_address <= std_logic_vector(x_address_unsigned);
     y_address_unsigned <=  unsigned(y_address);
     x_signed <= signed(x);
     y <= std_logic_vector(y_signed);
+    reset <= not enable;
 
     ${name}_conv1d : entity work.conv1d_fxp_MAC_RoundToZero
         generic map(
