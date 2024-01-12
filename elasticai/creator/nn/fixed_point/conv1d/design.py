@@ -107,10 +107,10 @@ class Conv1d(Design, Conv1dDesignProtocol):
 
         core_component = InProjectTemplate(
             package=module_to_package(self.__module__),
-            file_name="conv1d.vhd",
-            parameters={},
+            file_name="conv1d.tpl.vhd",
+            parameters={"rom_name_weights": rom_name["weights"], "rom_name_bias": rom_name["bias"]},
         )
-        destination.create_subpath("conv1d_fxp_MAC_RoundToZero").as_file(".vhd").write(
+        destination.create_subpath(f"{self.name}_fxp_MAC_RoundToZero").as_file(".vhd").write(
             core_component
         )
 

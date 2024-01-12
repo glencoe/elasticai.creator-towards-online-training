@@ -200,7 +200,7 @@ begin
     end process write_MAC_inputs;
     
     -- Weights
-    rom_w : entity work.conv1d_w_rom(rtl)
+    rom_w : entity work.${rom_name_weights}(rtl)
     port map  (
         clk  => n_clock,
         en   => '1',
@@ -209,7 +209,7 @@ begin
     );
 
     -- Bias
-    rom_b : entity work.conv1d_b_rom(rtl)
+    rom_b : entity work.${rom_name_bias}(rtl)
     port map  (
         clk  => n_clock,
         en   => '1',
