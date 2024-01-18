@@ -118,3 +118,18 @@ The byte for triggering computation start/stop is written to the address directl
 
 The skeleton provides a `busy` and a `done` signal that tell whether computation is still running or finished.
 The FPGA GPIO2 is connected to `busy`, the MCU can read that line to find out if computation has finished.
+
+
+## Skeleton v2
+The supported address range for the neural network skeleton ranges from
+1 to 20000.
+The skeleton we use for neural networks uses its memory mapped io
+as follows:
+
+|mode | address (bytewise) | value (byte) | meaning                                      |
+|-----|--------------------|--------------|----------------------------------------------|
+|write| 0                  | 0x01         | start computation                            |
+|write| 0                  | 0x00         | stop computation                             |
+|write| 1 to 20000         | arbitrary    | write up to 20000 bytes of input data        |
+|read | 1 to 20000         | result       | read up to 20000 bytes of computation result |
+|read | 0                  | id           | id of the loaded hw function                 |

@@ -14,6 +14,7 @@ class Skeleton:
         network_name: str,
         port: Port,
         id: int,
+        skeleton_version: str
     ):
         self.name = "skeleton"
         self._network_name = network_name
@@ -21,11 +22,17 @@ class Skeleton:
         self._x_num_values = str(x_num_values)
         self._y_num_values = str(y_num_values)
         self._id = id
+        if skeleton_version == "v1":
+            self._template_file_name = "network_skeleton.tpl.vhd"
+        elif skeleton_version == "v2":
+            self._template_file_name = "network_skeleton.tpl.vhd"
+        else:
+            raise Exception(f"Skeleton version {skeleton_version} does not exist")
 
     def save_to(self, destination: Path):
         template = InProjectTemplate(
             package=module_to_package(self.__module__),
-            file_name="network_skeleton.tpl.vhd",
+            file_name=self._template_file_name,
             parameters=dict(
                 name=self.name,
                 network_name=self._network_name,
@@ -40,7 +47,6 @@ class Skeleton:
         )
         file = destination.as_file(".vhd")
         file.write(template)
-
 
 class LSTMSkeleton:
     def __init__(self, network_name: str):
