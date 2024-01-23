@@ -1,3 +1,4 @@
+from creator.vhdl.code_generation.code_abstractions import to_vhdl_binary_string
 from elasticai.creator.file_generation.savable import Path
 from elasticai.creator.file_generation.template import (
     InProjectTemplate,
@@ -13,7 +14,7 @@ class Skeleton:
         y_num_values: int,
         network_name: str,
         port: Port,
-        id: int,
+        id: list[int] | int,
         skeleton_version: str
     ):
         self.name = "skeleton"
@@ -21,11 +22,17 @@ class Skeleton:
         self._port = port
         self._x_num_values = str(x_num_values)
         self._y_num_values = str(y_num_values)
+        if isinstance(id, int):
+            id = [id]
         self._id = id
         if skeleton_version == "v1":
             self._template_file_name = "network_skeleton.tpl.vhd"
+            if len(id) != 1:
+                raise Exception(f"should give an id of 1 byte. Actual length is {len(id)}")
         elif skeleton_version == "v2":
-            self._template_file_name = "network_skeleton.tpl.vhd"
+            self._template_file_name = "network_skeleton_v2.tpl.vhd"
+            if len(id) != 16:
+                raise Exception(f"should give an id of 16 byte. Actual length is {len(id)}")
         else:
             raise Exception(f"Skeleton version {skeleton_version} does not exist")
 
@@ -42,7 +49,7 @@ class Skeleton:
                 y_num_values=self._y_num_values,
                 data_width_out=str(self._port["y"].width),
                 y_addr_width=str(self._port["y_address"].width),
-                id='x"{0:02x}"'.format(self._id),
+                id=", ".join(map(to_vhdl_binary_string, self._id))
             ),
         )
         file = destination.as_file(".vhd")

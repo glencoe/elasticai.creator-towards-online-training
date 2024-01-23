@@ -45,8 +45,8 @@ architecture rtl of $name is
 
     type buf_data_in_t is array (0 to X_NUM_VALUES) of std_logic_vector(DATA_WIDTH_IN-1 downto 0);
     signal data_buf_in : buf_data_in_t;
-    type skeleton_id_data_t is array (0 to 0) of std_logic_vector(7 downto 0);
-    signal skeleton_id_str : skeleton_id_data_t := (0 => ${id});
+    type skeleton_id_data_t is array (0 to 15) of std_logic_vector(7 downto 0);
+    signal skeleton_id_str : skeleton_id_data_t := (${id});
 
     function pad_output_to_middleware(network_out : std_logic_vector(DATA_WIDTH_OUT-1 downto 0)) return std_logic_vector is
     variable k : std_logic_vector(7 downto 0);
@@ -97,9 +97,9 @@ begin
     begin
         if rising_edge(clock) then
             int_addr := to_integer(unsigned(address_in));
-            if int_addr = 0  then
-                data_out(7 downto 0) <= skeleton_id_str(int_addr-2000);
-            elsif int_addr <= Y_NUM_VALUES then
+            if int_addr <= 15 then
+                data_out(7 downto 0) <= skeleton_id_str(int_addr);
+            elsif int_addr <= Y_NUM_VALUES+15 then
                 y_address <= address_in(y_address'length-1 downto 0);
                 data_out(7 downto 0) <= pad_output_to_middleware(y);
             end if;
