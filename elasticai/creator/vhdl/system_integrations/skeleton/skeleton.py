@@ -1,3 +1,5 @@
+from functools import partial
+
 from elasticai.creator.vhdl.code_generation.code_abstractions import to_vhdl_binary_string
 from elasticai.creator.file_generation.savable import Path
 from elasticai.creator.file_generation.template import (
@@ -49,7 +51,7 @@ class Skeleton:
                 y_num_values=self._y_num_values,
                 data_width_out=str(self._port["y"].width),
                 y_addr_width=str(self._port["y_address"].width),
-                id=", ".join(map(to_vhdl_binary_string, self._id))
+                id=", ".join(map(partial(to_vhdl_binary_string, number_of_bits=8), self._id))
             ),
         )
         file = destination.as_file(".vhd")
