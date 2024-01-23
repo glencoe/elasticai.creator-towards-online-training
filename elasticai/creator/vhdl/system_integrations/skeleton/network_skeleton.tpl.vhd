@@ -46,7 +46,7 @@ architecture rtl of $name is
     type buf_data_in_t is array (0 to X_NUM_VALUES) of std_logic_vector(DATA_WIDTH_IN-1 downto 0);
     signal data_buf_in : buf_data_in_t;
     type skeleton_id_data_t is array (0 to 0) of std_logic_vector(7 downto 0);
-    signal skeleton_id_str : skeleton_id_data_t := (${id});
+    signal skeleton_id_str : skeleton_id_data_t := (0 => ${id});
 
     function pad_output_to_middleware(network_out : std_logic_vector(DATA_WIDTH_OUT-1 downto 0)) return std_logic_vector is
     variable k : std_logic_vector(7 downto 0);
