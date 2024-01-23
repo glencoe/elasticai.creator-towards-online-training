@@ -46,7 +46,7 @@ class _FirmwareENv5Base:
 
 class FirmwareENv5(_FirmwareENv5Base):
     def __init__(
-        self, network: Design, x_num_values: int, y_num_values: int, id: int
+        self, network: Design, x_num_values: int, y_num_values: int, id: int, skeleton_version: str = "v1"
     ) -> None:
         super().__init__(
             skeleton=Skeleton(
@@ -55,6 +55,7 @@ class FirmwareENv5(_FirmwareENv5Base):
                 x_num_values=x_num_values,
                 y_num_values=y_num_values,
                 id=id,
+                skeleton_version=skeleton_version
             )
         )
 
