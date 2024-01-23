@@ -1,4 +1,4 @@
-from creator.vhdl.code_generation.code_abstractions import to_vhdl_binary_string
+from elasticai.creator.vhdl.code_generation.code_abstractions import to_vhdl_binary_string
 from elasticai.creator.file_generation.savable import Path
 from elasticai.creator.file_generation.template import (
     InProjectTemplate,
