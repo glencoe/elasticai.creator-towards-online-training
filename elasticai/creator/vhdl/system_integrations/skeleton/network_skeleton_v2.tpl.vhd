@@ -82,9 +82,9 @@ begin
                 network_enable <= '0';
             else
                 int_addr := to_integer(unsigned(address_in));
-                if int_addr = 0 then
+                if int_addr = 16 then
                     network_enable <= data_in(0);
-                elsif int_addr >= 16 and int_addr < 16+X_NUM_VALUES then
+                elsif int_addr >= 18 and int_addr < 18 + X_NUM_VALUES then
                     data_buf_in(int_addr) <= data_in(DATA_WIDTH_IN-1 downto 0);
                 end if;
             end if;
@@ -98,7 +98,7 @@ begin
             int_addr := to_integer(unsigned(address_in));
             if int_addr <= 15 then
                 data_out(7 downto 0) <= skeleton_id_str(int_addr);
-            elsif int_addr >= 16 and int_addr < 16 + Y_NUM_VALUES then
+            elsif int_addr >= 18 and int_addr < 18 + Y_NUM_VALUES then
                 y_address <= std_logic_vector(unsigned(address_in(y_address'length-1 downto 0))-16);
                 data_out(7 downto 0) <= pad_output_to_middleware(y);
             end if;
